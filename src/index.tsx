@@ -2,66 +2,84 @@ import React, { useState } from 'react'
 import ReactDOM from 'react-dom'
 import './index.css'
 
+enum Marker {
+  HUMAN,
+  BOT,
+  FREE
+}
+
+function markerToStr(marker: Marker): string {
+  if (marker === Marker.HUMAN) {
+    return '👍'
+  } else if (marker === Marker.BOT) {
+    return '🤖'
+  } else {
+    return ''
+  }
+}
+
+function createBoardArray(x: number, y: number) : Marker[][] {
+  let ret = []
+  for (let i = 0; i < y; ++i) {
+    let row = Array(x).fill(Marker.FREE)
+    ret.push(row)
+  }
+  return ret
+}
+
 interface SquareProps {
-  value: number
+  x: number
+  y: number
+  value: Marker
+  onClick: (x: number, y: number) => void
 }
 
 function Square(props: SquareProps) : JSX.Element {
-  const [ value, setValue ] = useState('')
   return (
-      <td className="square" onClick={() => setValue('X') }>
-        {value}
+      <td className="square" onClick={() => props.onClick(props.x, props.y) }>
+        {markerToStr(props.value)}
       </td>
     )
 }
 
-class Board extends React.Component {
-  renderSquare(i: number) {
-    return <Square value={i} />
+function Board() : JSX.Element {
+  const status = 'Next player: X'
+  const [boardArray, setBoardArray] = useState(createBoardArray(8,8))
+  const handleSquareClick = (x: number, y: number) => {
+    console.log(`Received click at ${x} ${y}`)
+    boardArray[y][x] = Marker.HUMAN
+    setBoardArray(boardArray.map((row, rowNum) => (
+      row.map((marker, colNum) => ((rowNum === y && colNum === x) ? Marker.HUMAN : marker))
+    )))
   }
-
-  render() {
-    const status = 'Next player: X'
-
-    return (
-      <div>
-        <div className="status">{status}</div>
-        <table>
-          <tr className="board-row">
-            {this.renderSquare(0)}
-            {this.renderSquare(1)}
-            {this.renderSquare(2)}
+  return (
+    <div>
+      <div className="status">{status}</div>
+      <table><tbody>
+        {boardArray.map((row, y) => (
+          <tr key={y} className="board-row">
+            {row.map((marker, x) => (
+              <Square key={`${x} ${y}`} value={marker} onClick={handleSquareClick} x={x} y={y} />
+            ))}
           </tr>
-          <tr className="board-row">
-            {this.renderSquare(3)}
-            {this.renderSquare(4)}
-            {this.renderSquare(5)}
-          </tr>
-          <tr className="board-row">
-            {this.renderSquare(6)}
-            {this.renderSquare(7)}
-            {this.renderSquare(8)}
-          </tr>
-        </table>
-      </div>
-    )
-  }
+        ))}
+      </tbody></table>
+    </div>
+  )
 }
 
-class Game extends React.Component {
-  render() {
-    return (
-      <div className="game">
-        <div className="game-board">
-          <Board />
-        </div>
-        <div className="game-info">
-          <div>{/* status */}</div>
-          <ol>{/* TODO */}</ol>
-        </div>
+function Game() : JSX.Element {
+  return (
+    <div className="game">
+      <div className="game-board">
+        <Board />
       </div>
-    )
-  }
+      <div className="game-info">
+        <div>{/* status */}</div>
+        <ol>{/* TODO */}</ol>
+      </div>
+    </div>
+  )
 }
 
 // ========================================
