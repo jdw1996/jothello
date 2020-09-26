@@ -42,14 +42,20 @@ function Square(props: SquareProps) : JSX.Element {
     )
 }
 
-function Board() : JSX.Element {
-  const status = 'Next player: X'
+interface BoardProps {
+  isHumanNext: boolean
+  handleClick: () => void
+}
+
+function Board(props: BoardProps) : JSX.Element {
+  const nextPlayer = props.isHumanNext ? Marker.HUMAN : Marker.BOT
+  const status = `Next player: ${markerToStr(nextPlayer)}`
   const [boardArray, setBoardArray] = useState(createBoardArray(8,8))
   const handleSquareClick = (x: number, y: number) => {
-    console.log(`Received click at ${x} ${y}`)
-    boardArray[y][x] = Marker.HUMAN
+    if (boardArray[y][x] !== Marker.FREE) { return }
+    props.handleClick()
     setBoardArray(boardArray.map((row, rowNum) => (
-      row.map((marker, colNum) => ((rowNum === y && colNum === x) ? Marker.HUMAN : marker))
+      row.map((marker, colNum) => ((rowNum === y && colNum === x) ? nextPlayer : marker))
     )))
   }
   return (
@@ -69,10 +75,12 @@ function Board() : JSX.Element {
 }
 
 function Game() : JSX.Element {
+  const [isHumanNext, setIsHumanNext] = useState(true)
+  const handleClick = () => { setIsHumanNext(!isHumanNext) }
   return (
     <div className="game">
       <div className="game-board">
-        <Board />
+        <Board isHumanNext={isHumanNext} handleClick={handleClick} />
       </div>
       <div className="game-info">
         <div>{/* status */}</div>
