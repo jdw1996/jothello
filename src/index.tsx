@@ -82,10 +82,6 @@ function Game() : JSX.Element {
       <div className="game-board">
         <Board isHumanNext={isHumanNext} handleClick={handleClick} />
       </div>
-      <div className="game-info">
-        <div>{/* status */}</div>
-        <ol>{/* TODO */}</ol>
-      </div>
     </div>
   )
 }
