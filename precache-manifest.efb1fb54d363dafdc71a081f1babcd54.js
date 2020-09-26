@@ -1,10 +1,10 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "568bd9c0e80fb829dc316dec827e8a85",
+    "revision": "baa9b4e44f1437611b70d6292f22d6da",
     "url": "/jothello/index.html"
   },
   {
-    "revision": "ffd4778dc4c9c84abb85",
+    "revision": "5bd149a5eaf2e6a7e17e",
     "url": "/jothello/static/css/main.43d136e4.chunk.css"
   },
   {
@@ -16,8 +16,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/jothello/static/js/2.f9188d19.chunk.js.LICENSE.txt"
   },
   {
-    "revision": "ffd4778dc4c9c84abb85",
-    "url": "/jothello/static/js/main.a4564501.chunk.js"
+    "revision": "5bd149a5eaf2e6a7e17e",
+    "url": "/jothello/static/js/main.48c59654.chunk.js"
   },
   {
     "revision": "e850661392a14b55faff",
