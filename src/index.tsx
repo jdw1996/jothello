@@ -44,25 +44,16 @@ function Square(props: SquareProps) : JSX.Element {
 
 interface BoardProps {
   isHumanNext: boolean
-  handleClick: () => void
+  boardArray: Marker[][]
+  handleBoardClick: (x: number, y: number) => void
 }
 
 function Board(props: BoardProps) : JSX.Element {
-  const nextPlayer = props.isHumanNext ? Marker.HUMAN : Marker.BOT
-  const status = `Next player: ${markerToStr(nextPlayer)}`
-  const [boardArray, setBoardArray] = useState(createBoardArray(8,8))
-  const handleSquareClick = (x: number, y: number) => {
-    if (boardArray[y][x] !== Marker.FREE) { return }
-    props.handleClick()
-    setBoardArray(boardArray.map((row, rowNum) => (
-      row.map((marker, colNum) => ((rowNum === y && colNum === x) ? nextPlayer : marker))
-    )))
-  }
+  const handleSquareClick = (x: number, y: number) => { props.handleBoardClick(x, y) }
   return (
     <div>
-      <div className="status">{status}</div>
       <table><tbody>
-        {boardArray.map((row, y) => (
+        {props.boardArray.map((row, y) => (
           <tr key={y} className="board-row">
             {row.map((marker, x) => (
               <Square key={`${x} ${y}`} value={marker} onClick={handleSquareClick} x={x} y={y} />
@@ -76,11 +67,21 @@ function Board(props: BoardProps) : JSX.Element {
 
 function Game() : JSX.Element {
   const [isHumanNext, setIsHumanNext] = useState(true)
-  const handleClick = () => { setIsHumanNext(!isHumanNext) }
+  const [boardArray, setBoardArray] = useState(createBoardArray(8,8))
+  const nextPlayer = isHumanNext ? Marker.HUMAN : Marker.BOT
+  const status = `Next player: ${markerToStr(nextPlayer)}`
+  const handleBoardClick = (x: number, y: number) => {
+    if (boardArray[y][x] !== Marker.FREE) { return }
+    setIsHumanNext(!isHumanNext)
+    setBoardArray(boardArray.map((row, rowNum) => (
+      row.map((marker, colNum) => ((rowNum === y && colNum === x) ? nextPlayer : marker))
+    )))
+  }
   return (
     <div className="game">
+      <div className="status">{status}</div>
       <div className="game-board">
-        <Board isHumanNext={isHumanNext} handleClick={handleClick} />
+        <Board isHumanNext={isHumanNext} handleBoardClick={handleBoardClick} boardArray={boardArray} />
       </div>
     </div>
   )
