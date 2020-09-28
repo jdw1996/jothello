@@ -24,6 +24,42 @@ function createBoardArray(x: number, y: number) : Marker[][] {
     let row = Array(x).fill(Marker.FREE)
     ret.push(row)
   }
+  const halfX = Math.floor(x / 2)
+  const halfY = Math.floor(y / 2)
+  ret[halfY][halfX] = Marker.BOT
+  ret[halfY][halfX-1] = Marker.HUMAN
+  ret[halfY-1][halfX] = Marker.HUMAN
+  ret[halfY-1][halfX-1] = Marker.BOT
+  return ret
+}
+
+function canFlipInDirection(board: Marker[][], x: number, y: number, i: number, j: number, player: Marker) : boolean {
+  x += i
+  y += j
+  let foundSomeToFlip = false
+  while (x >= 0 && x < board[0].length && y >= 0 && y < board.length) {
+    console.log(`${i} ${j}`, markerToStr(board[y][x]))
+    if (board[y][x] === Marker.FREE) {
+      return false
+    } else if (board[y][x] === player) {
+      return foundSomeToFlip
+    } else {
+      foundSomeToFlip = true
+    }
+    x += i
+    y += j
+  }
+  return false
+}
+
+function isValidMove(board: Marker[][], x: number, y: number, player: Marker) : boolean {
+  if (board[y][x] !== Marker.FREE) { return false }
+  let ret = false
+  for (let i = -1; i <= 1; ++i) {
+    for (let j = -1; j <= 1; ++j) {
+      ret = ret || canFlipInDirection(board, x, y, i, j, player)
+    }
+  }
   return ret
 }
 
@@ -71,7 +107,7 @@ function Game() : JSX.Element {
   const nextPlayer = isHumanNext ? Marker.HUMAN : Marker.BOT
   const status = `Next player: ${markerToStr(nextPlayer)}`
   const handleBoardClick = (x: number, y: number) => {
-    if (boardArray[y][x] !== Marker.FREE) { return }
+    if (!isValidMove(boardArray, x, y, nextPlayer)) { return }
     setIsHumanNext(!isHumanNext)
     setBoardArray(boardArray.map((row, rowNum) => (
       row.map((marker, colNum) => ((rowNum === y && colNum === x) ? nextPlayer : marker))
