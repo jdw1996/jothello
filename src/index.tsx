@@ -106,12 +106,15 @@ function Game() : JSX.Element {
   const nextPlayer = isHumanNext ? Marker.HUMAN : Marker.BOT
   const status = `Next player: ${markerToStr(nextPlayer)}`
   const handleBoardClick = (x: number, y: number) => {
-    let posns = flippablePositions(boardArray, x, y, nextPlayer)
-    if (posns.length === 0) { return }
+    let flippable = flippablePositions(boardArray, x, y, nextPlayer)
+    if (flippable.length === 0) { return }
     setIsHumanNext(!isHumanNext)
-    setBoardArray(boardArray.map((row, rowNum) => (
-      row.map((marker, colNum) => ((rowNum === y && colNum === x) ? nextPlayer : marker))
-    )))
+    const boardArrayClone = boardArray.slice()
+    boardArrayClone[y][x] = nextPlayer
+    flippable.forEach(([i,j]) => {
+      boardArrayClone[j][i] = nextPlayer
+    });
+    setBoardArray(boardArrayClone)
   }
   return (
     <div className="game">
