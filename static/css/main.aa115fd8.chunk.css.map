@@ -1,0 +1,1 @@
+{"version":3,"sources":["index.css"],"names":[],"mappings":"AAAA,MACE,wBACF,CAEA,YACE,qBAAuB,CACvB,iBAAkB,CAClB,eACF,CAEA,GACE,UAAW,CACX,WACF","file":"main.aa115fd8.chunk.css","sourcesContent":["table {\n  border-collapse: collapse;\n}\n\ntable, th, td {\n  border: 1px solid black;\n  text-align: center;\n  font-size: 1.2em;\n}\n\ntd {\n  width: 40px;\n  height: 40px;\n}\n"]}
