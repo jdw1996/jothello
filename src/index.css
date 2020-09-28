@@ -5,6 +5,7 @@ table {
 table, th, td {
   border: 1px solid black;
   text-align: center;
+  font-size: 1.2em;
 }
 
 td {
