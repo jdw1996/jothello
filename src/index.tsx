@@ -33,34 +33,33 @@ function createBoardArray(x: number, y: number) : Marker[][] {
   return ret
 }
 
-function canFlipInDirection(board: Marker[][], x: number, y: number, i: number, j: number, player: Marker) : boolean {
-  x += i
-  y += j
-  let foundSomeToFlip = false
-  while (x >= 0 && x < board[0].length && y >= 0 && y < board.length) {
-    console.log(`${i} ${j}`, markerToStr(board[y][x]))
-    if (board[y][x] === Marker.FREE) {
-      return false
-    } else if (board[y][x] === player) {
-      return foundSomeToFlip
-    } else {
-      foundSomeToFlip = true
-    }
+function flippableInDirection(
+  board: Marker[][], x: number, y: number, i: number, j: number, player: Marker
+) : [number,number][] {
+  let flippable: [number,number][] = []
+  while (true) {
     x += i
     y += j
-  }
-  return false
-}
-
-function isValidMove(board: Marker[][], x: number, y: number, player: Marker) : boolean {
-  if (board[y][x] !== Marker.FREE) { return false }
-  let ret = false
-  for (let i = -1; i <= 1; ++i) {
-    for (let j = -1; j <= 1; ++j) {
-      ret = ret || canFlipInDirection(board, x, y, i, j, player)
+    if (x < 0 || x >= board[0].length || y < 0 || y >= board.length) { return [] }
+    if (board[y][x] === Marker.FREE) {
+      return []
+    } else if (board[y][x] === player) {
+      return flippable
+    } else {
+      flippable.push([x,y])
     }
   }
-  return ret
+}
+
+function flippablePositions(board: Marker[][], x: number, y: number, player: Marker) : [number,number][] {
+  if (board[y][x] !== Marker.FREE) { return [] }
+  let flippable: [number,number][] = []
+  for (let i = -1; i <= 1; ++i) {
+    for (let j = -1; j <= 1; ++j) {
+      flippable = flippable.concat(flippableInDirection(board, x, y, i, j, player))
+    }
+  }
+  return flippable
 }
 
 interface SquareProps {
@@ -107,7 +106,8 @@ function Game() : JSX.Element {
   const nextPlayer = isHumanNext ? Marker.HUMAN : Marker.BOT
   const status = `Next player: ${markerToStr(nextPlayer)}`
   const handleBoardClick = (x: number, y: number) => {
-    if (!isValidMove(boardArray, x, y, nextPlayer)) { return }
+    let posns = flippablePositions(boardArray, x, y, nextPlayer)
+    if (posns.length === 0) { return }
     setIsHumanNext(!isHumanNext)
     setBoardArray(boardArray.map((row, rowNum) => (
       row.map((marker, colNum) => ((rowNum === y && colNum === x) ? nextPlayer : marker))
