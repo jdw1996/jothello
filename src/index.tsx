@@ -78,7 +78,6 @@ function Square(props: SquareProps) : JSX.Element {
 }
 
 interface BoardProps {
-  isHumanNext: boolean
   boardArray: Marker[][]
   handleBoardClick: (x: number, y: number) => void
 }
@@ -101,26 +100,51 @@ function Board(props: BoardProps) : JSX.Element {
 }
 
 function Game() : JSX.Element {
+  const BOARD_HEIGHT = 8
+  const BOARD_WIDTH = 8
   const [isHumanNext, setIsHumanNext] = useState(true)
-  const [boardArray, setBoardArray] = useState(createBoardArray(8,8))
+  const [boardArray, setBoardArray] = useState(createBoardArray(BOARD_WIDTH, BOARD_HEIGHT))
+  const [lastPlayerPassed, setLastPlayerPassed] = useState(false)
+  const [isGameFinished, setIsGameFinished] = useState(false)
   const nextPlayer = isHumanNext ? Marker.HUMAN : Marker.BOT
-  const status = `Next player: ${markerToStr(nextPlayer)}`
+  const status = isGameFinished ? 'Game over.' : `Next player: ${markerToStr(nextPlayer)}`
+  let validMoves = new Map<string, [number, number][]>()
+  if (!isGameFinished) {
+    for (let i = 0; i < BOARD_HEIGHT; ++i) {
+      for (let j = 0; j < BOARD_WIDTH; ++j) {
+        let flippable = flippablePositions(boardArray, i, j, nextPlayer)
+        if (flippable.length > 0) {
+          validMoves.set(`${i},${j}`, flippable)
+        }
+      }
+    }
+    if (validMoves.size === 0) {
+      if (lastPlayerPassed) {
+        setIsGameFinished(true)
+      } else {
+        setIsHumanNext(!isHumanNext)
+        setLastPlayerPassed(true)
+      }
+    }
+  }
   const handleBoardClick = (x: number, y: number) => {
-    let flippable = flippablePositions(boardArray, x, y, nextPlayer)
-    if (flippable.length === 0) { return }
+    if (isGameFinished) { return }
+    const currentKey = `${x},${y}`
+    if (!validMoves.has(currentKey)) { return }
     setIsHumanNext(!isHumanNext)
     const boardArrayClone = boardArray.slice()
     boardArrayClone[y][x] = nextPlayer
-    flippable.forEach(([i,j]) => {
+    validMoves.get(currentKey)?.forEach(([i,j]) => {
       boardArrayClone[j][i] = nextPlayer
     });
     setBoardArray(boardArrayClone)
+    setLastPlayerPassed(false)
   }
   return (
     <div className="game">
       <div className="status">{status}</div>
       <div className="game-board">
-        <Board isHumanNext={isHumanNext} handleBoardClick={handleBoardClick} boardArray={boardArray} />
+        <Board handleBoardClick={handleBoardClick} boardArray={boardArray} />
       </div>
     </div>
   )
