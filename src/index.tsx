@@ -21,6 +21,7 @@ function markerToStr(marker: Marker): string {
 interface SquareContent {
   marker: Marker
   isValidMove: boolean
+  wouldBeFlipped: boolean
 }
 
 function createBoardArray(width: number, height: number, nextPlayer: Marker): SquareContent[][] {
@@ -28,7 +29,7 @@ function createBoardArray(width: number, height: number, nextPlayer: Marker): Sq
   for (let j = 0; j < height; ++j) {
     let row = []
     for (let i = 0; i < width; ++i) {
-      row.push({ marker: Marker.FREE, isValidMove: false })
+      row.push({ marker: Marker.FREE, isValidMove: false, wouldBeFlipped: false })
     }
     ret.push(row)
   }
@@ -88,11 +89,11 @@ function getValidMoves(boardArray: SquareContent[][], nextPlayer: Marker): Map<s
 }
 
 interface SquareProps {
-  x: number
-  y: number
   value: SquareContent
-  onClick: (x: number, y: number) => void
   nextPlayer: Marker
+  onClick: () => void
+  handleMouseEnter: () => void
+  handleMouseLeave: () => void
 }
 
 function Square(props: SquareProps): JSX.Element {
@@ -105,8 +106,16 @@ function Square(props: SquareProps): JSX.Element {
       cssClasses += ' valid-bot-move'
     }
   }
+  if (props.value.wouldBeFlipped) {
+    cssClasses += ' would-be-flipped'
+    if (props.nextPlayer === Marker.HUMAN) {
+      cssClasses += ' would-be-flipped-human'
+    } else {
+      cssClasses += ' would-be-flipped-bot'
+    }
+  }
   return (
-    <td className={cssClasses} onClick={() => props.onClick(props.x, props.y)}>
+    <td className={cssClasses} onClick={props.onClick} onMouseEnter={props.handleMouseEnter} onMouseLeave={props.handleMouseLeave}>
       {markerToStr(props.value.marker)}
     </td>
   )
@@ -114,19 +123,29 @@ function Square(props: SquareProps): JSX.Element {
 
 interface BoardProps {
   boardArray: SquareContent[][]
-  handleBoardClick: (x: number, y: number) => void
   nextPlayer: Marker
+  handleBoardClick: (x: number, y: number) => void
+  handleSquareMouseEnter: (x: number, y: number) => void
+  handleSquareMouseLeave: () => void
 }
 
 function Board(props: BoardProps): JSX.Element {
-  const handleSquareClick = (x: number, y: number) => { props.handleBoardClick(x, y) }
   return (
     <div>
       <table><tbody>
         {props.boardArray.map((row, y) => (
           <tr key={y} className="board-row">
             {row.map((sc, x) => (
-              <Square key={`${x} ${y}`} value={sc} onClick={handleSquareClick} x={x} y={y} nextPlayer={props.nextPlayer} />
+              <Square
+                key={`${x} ${y}`}
+                value={sc}
+                x={x}
+                y={y}
+                nextPlayer={props.nextPlayer}
+                onClick={() => props.handleBoardClick(x, y)}
+                handleMouseEnter={() => props.handleSquareMouseEnter(x, y)}
+                handleMouseLeave={props.handleSquareMouseLeave}
+              />
             ))}
           </tr>
         ))}
@@ -169,17 +188,42 @@ function Game(): JSX.Element {
     for (let i = 0; i < BOARD_WIDTH; ++i) {
       for (let j = 0; j < BOARD_HEIGHT; ++j) {
         boardArrayClone[j][i].isValidMove = newValidMoves.has(`${i},${j}`)
+        boardArrayClone[j][i].wouldBeFlipped = false
       }
     }
     setBoardArray(boardArrayClone)
     setValidMoves(newValidMoves)
     setLastPlayerPassed(false)
   }
+  const handleSquareMouseEnter = (x: number, y: number) => {
+    const currentKey = `${x},${y}`
+    if (!validMoves.has(currentKey)) { return }
+    const boardArrayClone = boardArray.slice()
+    validMoves.get(currentKey)?.forEach(([i, j]) => {
+      boardArrayClone[j][i].wouldBeFlipped = true
+    })
+    setBoardArray(boardArrayClone)
+  }
+  const handleSquareMouseLeave = () => {
+    const boardArrayClone = boardArray.slice()
+    for (let i = 0; i < boardArrayClone[0].length; ++i) {
+      for (let j = 0; j < boardArrayClone.length; ++j) {
+        boardArrayClone[j][i].wouldBeFlipped = false
+      }
+    }
+    setBoardArray(boardArrayClone)
+  }
   return (
     <div className="game">
       <div className="status">{status}</div>
       <div className="game-board">
-        <Board handleBoardClick={handleBoardClick} boardArray={boardArray} nextPlayer={nextPlayer} />
+        <Board
+          boardArray={boardArray}
+          nextPlayer={nextPlayer}
+          handleBoardClick={handleBoardClick}
+          handleSquareMouseEnter={handleSquareMouseEnter}
+          handleSquareMouseLeave={handleSquareMouseLeave}
+        />
       </div>
     </div>
   )
