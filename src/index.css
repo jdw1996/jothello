@@ -9,11 +9,11 @@ table, th, td {
 }
 
 .valid-human-move {
-  background-color: gold;
+  background-color: #ff4c4c;
 }
 
 .valid-bot-move {
-  background-color: lightskyblue;
+  background-color: #4ca9ff;
 }
 
 td {
