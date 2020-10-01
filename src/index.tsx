@@ -18,32 +18,44 @@ function markerToStr(marker: Marker): string {
   }
 }
 
-function createBoardArray(x: number, y: number): Marker[][] {
-  let ret = []
-  for (let i = 0; i < y; ++i) {
-    let row = Array(x).fill(Marker.FREE)
+interface SquareContent {
+  marker: Marker
+  isValidMove: boolean
+}
+
+function createBoardArray(width: number, height: number, nextPlayer: Marker): SquareContent[][] {
+  let ret: SquareContent[][] = []
+  for (let j = 0; j < height; ++j) {
+    let row = []
+    for (let i = 0; i < width; ++i) {
+      row.push({ marker: Marker.FREE, isValidMove: false })
+    }
     ret.push(row)
   }
-  const halfX = Math.floor(x / 2)
-  const halfY = Math.floor(y / 2)
-  ret[halfY][halfX] = Marker.BOT
-  ret[halfY][halfX - 1] = Marker.HUMAN
-  ret[halfY - 1][halfX] = Marker.HUMAN
-  ret[halfY - 1][halfX - 1] = Marker.BOT
+  const halfWidth = Math.floor(width / 2)
+  const halfHeight = Math.floor(height / 2)
+  ret[halfHeight][halfWidth].marker = Marker.BOT
+  ret[halfHeight][halfWidth - 1].marker = Marker.HUMAN
+  ret[halfHeight - 1][halfWidth].marker = Marker.HUMAN
+  ret[halfHeight - 1][halfWidth - 1].marker = Marker.BOT
+  getValidMoves(ret, nextPlayer).forEach((_v, k) => {
+    const [x, y] = k.split(',')
+    ret[Number(y)][Number(x)].isValidMove = true
+  })
   return ret
 }
 
 function flippableInDirection(
-  board: Marker[][], x: number, y: number, i: number, j: number, player: Marker
+  board: SquareContent[][], x: number, y: number, i: number, j: number, player: Marker
 ): [number, number][] {
   let flippable: [number, number][] = []
   while (true) {
     x += i
     y += j
     if (x < 0 || x >= board[0].length || y < 0 || y >= board.length) { return [] }
-    if (board[y][x] === Marker.FREE) {
+    if (board[y][x].marker === Marker.FREE) {
       return []
-    } else if (board[y][x] === player) {
+    } else if (board[y][x].marker === player) {
       return flippable
     } else {
       flippable.push([x, y])
@@ -51,8 +63,8 @@ function flippableInDirection(
   }
 }
 
-function flippablePositions(board: Marker[][], x: number, y: number, player: Marker): [number, number][] {
-  if (board[y][x] !== Marker.FREE) { return [] }
+function flippablePositions(board: SquareContent[][], x: number, y: number, player: Marker): [number, number][] {
+  if (board[y][x].marker !== Marker.FREE) { return [] }
   let flippable: [number, number][] = []
   for (let i = -1; i <= 1; ++i) {
     for (let j = -1; j <= 1; ++j) {
@@ -62,24 +74,48 @@ function flippablePositions(board: Marker[][], x: number, y: number, player: Mar
   return flippable
 }
 
+function getValidMoves(boardArray: SquareContent[][], nextPlayer: Marker): Map<string, [number, number][]> {
+  const validMoves = new Map<string, [number, number][]>()
+  for (let i = 0; i < boardArray.length; ++i) {
+    for (let j = 0; j < boardArray[0].length; ++j) {
+      let flippable = flippablePositions(boardArray, i, j, nextPlayer)
+      if (flippable.length > 0) {
+        validMoves.set(`${i},${j}`, flippable)
+      }
+    }
+  }
+  return validMoves
+}
+
 interface SquareProps {
   x: number
   y: number
-  value: Marker
+  value: SquareContent
   onClick: (x: number, y: number) => void
+  nextPlayer: Marker
 }
 
 function Square(props: SquareProps): JSX.Element {
+  let cssClasses = 'square'
+  if (props.value.isValidMove) {
+    cssClasses += ' valid-move'
+    if (props.nextPlayer === Marker.HUMAN) {
+      cssClasses += ' valid-human-move'
+    } else {
+      cssClasses += ' valid-bot-move'
+    }
+  }
   return (
-    <td className="square" onClick={() => props.onClick(props.x, props.y)}>
-      {markerToStr(props.value)}
+    <td className={cssClasses} onClick={() => props.onClick(props.x, props.y)}>
+      {markerToStr(props.value.marker)}
     </td>
   )
 }
 
 interface BoardProps {
-  boardArray: Marker[][]
+  boardArray: SquareContent[][]
   handleBoardClick: (x: number, y: number) => void
+  nextPlayer: Marker
 }
 
 function Board(props: BoardProps): JSX.Element {
@@ -89,8 +125,8 @@ function Board(props: BoardProps): JSX.Element {
       <table><tbody>
         {props.boardArray.map((row, y) => (
           <tr key={y} className="board-row">
-            {row.map((marker, x) => (
-              <Square key={`${x} ${y}`} value={marker} onClick={handleSquareClick} x={x} y={y} />
+            {row.map((sc, x) => (
+              <Square key={`${x} ${y}`} value={sc} onClick={handleSquareClick} x={x} y={y} nextPlayer={props.nextPlayer} />
             ))}
           </tr>
         ))}
@@ -103,21 +139,13 @@ function Game(): JSX.Element {
   const BOARD_HEIGHT = 8
   const BOARD_WIDTH = 8
   const [isHumanNext, setIsHumanNext] = useState(true)
-  const [boardArray, setBoardArray] = useState(createBoardArray(BOARD_WIDTH, BOARD_HEIGHT))
+  const nextPlayer = isHumanNext ? Marker.HUMAN : Marker.BOT
+  const [boardArray, setBoardArray] = useState(createBoardArray(BOARD_WIDTH, BOARD_HEIGHT, nextPlayer))
   const [lastPlayerPassed, setLastPlayerPassed] = useState(false)
   const [isGameFinished, setIsGameFinished] = useState(false)
-  const nextPlayer = isHumanNext ? Marker.HUMAN : Marker.BOT
+  const [validMoves, setValidMoves] = useState(getValidMoves(boardArray, nextPlayer))
   const status = isGameFinished ? 'Game over.' : `Next player: ${markerToStr(nextPlayer)}`
-  let validMoves = new Map<string, [number, number][]>()
   if (!isGameFinished) {
-    for (let i = 0; i < BOARD_HEIGHT; ++i) {
-      for (let j = 0; j < BOARD_WIDTH; ++j) {
-        let flippable = flippablePositions(boardArray, i, j, nextPlayer)
-        if (flippable.length > 0) {
-          validMoves.set(`${i},${j}`, flippable)
-        }
-      }
-    }
     if (validMoves.size === 0) {
       if (lastPlayerPassed) {
         setIsGameFinished(true)
@@ -133,18 +161,25 @@ function Game(): JSX.Element {
     if (!validMoves.has(currentKey)) { return }
     setIsHumanNext(!isHumanNext)
     const boardArrayClone = boardArray.slice()
-    boardArrayClone[y][x] = nextPlayer
+    boardArrayClone[y][x].marker = nextPlayer
     validMoves.get(currentKey)?.forEach(([i, j]) => {
-      boardArrayClone[j][i] = nextPlayer
-    });
+      boardArrayClone[j][i].marker = nextPlayer
+    })
+    const newValidMoves = getValidMoves(boardArrayClone, nextPlayer === Marker.HUMAN ? Marker.BOT : Marker.HUMAN)
+    for (let i = 0; i < BOARD_WIDTH; ++i) {
+      for (let j = 0; j < BOARD_HEIGHT; ++j) {
+        boardArrayClone[j][i].isValidMove = newValidMoves.has(`${i},${j}`)
+      }
+    }
     setBoardArray(boardArrayClone)
+    setValidMoves(newValidMoves)
     setLastPlayerPassed(false)
   }
   return (
     <div className="game">
       <div className="status">{status}</div>
       <div className="game-board">
-        <Board handleBoardClick={handleBoardClick} boardArray={boardArray} />
+        <Board handleBoardClick={handleBoardClick} boardArray={boardArray} nextPlayer={nextPlayer} />
       </div>
     </div>
   )
