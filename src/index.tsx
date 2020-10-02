@@ -212,9 +212,9 @@ function Game(): JSX.Element {
     }
     const boardArrayClone = boardArray.slice();
     boardArrayClone[y][x].marker = nextPlayer;
-    validMoves.get(currentKey)?.forEach(([i, j]) => {
+    for (const [i, j] of validMoves.get(currentKey) || []) {
       boardArrayClone[j][i].marker = nextPlayer;
-    });
+    }
     let newValidMoves = getValidMoves(
       boardArrayClone,
       isHumanNext ? Marker.BOT : Marker.HUMAN,
@@ -242,9 +242,9 @@ function Game(): JSX.Element {
       return;
     }
     const boardArrayClone = boardArray.slice();
-    validMoves.get(currentKey)?.forEach(([i, j]) => {
+    for (const [i, j] of validMoves.get(currentKey) || []) {
       boardArrayClone[j][i].wouldBeFlipped = true;
-    });
+    }
     setBoardArray(boardArrayClone);
   };
   const handleSquareMouseLeave = () => {
