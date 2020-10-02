@@ -153,36 +153,33 @@ function Board(props: BoardProps): JSX.Element {
 }
 
 function Game(): JSX.Element {
-  const BOARD_HEIGHT = 8
-  const BOARD_WIDTH = 8
+  const BOARD_HEIGHT = 4
+  const BOARD_WIDTH = 4
   const [isHumanNext, setIsHumanNext] = useState(true)
   const nextPlayer = isHumanNext ? Marker.HUMAN : Marker.BOT
   const [boardArray, setBoardArray] = useState(createBoardArray(BOARD_WIDTH, BOARD_HEIGHT, nextPlayer))
-  const [lastPlayerPassed, setLastPlayerPassed] = useState(false)
   const [isGameFinished, setIsGameFinished] = useState(false)
   const [validMoves, setValidMoves] = useState(getValidMoves(boardArray, nextPlayer))
   const status = isGameFinished ? 'Game over.' : `Next player: ${markerToStr(nextPlayer)}`
-  if (!isGameFinished) {
-    if (validMoves.size === 0) {
-      if (lastPlayerPassed) {
-        setIsGameFinished(true)
-      } else {
-        setIsHumanNext(!isHumanNext)
-        setLastPlayerPassed(true)
-      }
-    }
-  }
+
   const handleBoardClick = (x: number, y: number) => {
     if (isGameFinished) { return }
     const currentKey = `${x},${y}`
     if (!validMoves.has(currentKey)) { return }
-    setIsHumanNext(!isHumanNext)
     const boardArrayClone = boardArray.slice()
     boardArrayClone[y][x].marker = nextPlayer
     validMoves.get(currentKey)?.forEach(([i, j]) => {
       boardArrayClone[j][i].marker = nextPlayer
     })
-    const newValidMoves = getValidMoves(boardArrayClone, nextPlayer === Marker.HUMAN ? Marker.BOT : Marker.HUMAN)
+    let newValidMoves = getValidMoves(boardArrayClone, isHumanNext ? Marker.BOT : Marker.HUMAN)
+    if (newValidMoves.size === 0) {
+      newValidMoves = getValidMoves(boardArrayClone, nextPlayer)
+      if (newValidMoves.size === 0) {
+        setIsGameFinished(true)
+      }
+    } else {
+      setIsHumanNext(!isHumanNext)
+    }
     for (let i = 0; i < BOARD_WIDTH; ++i) {
       for (let j = 0; j < BOARD_HEIGHT; ++j) {
         boardArrayClone[j][i].isValidMove = newValidMoves.has(`${i},${j}`)
@@ -191,7 +188,6 @@ function Game(): JSX.Element {
     }
     setBoardArray(boardArrayClone)
     setValidMoves(newValidMoves)
-    setLastPlayerPassed(false)
   }
   const handleSquareMouseEnter = (x: number, y: number) => {
     const currentKey = `${x},${y}`
