@@ -139,8 +139,6 @@ function Board(props: BoardProps): JSX.Element {
               <Square
                 key={`${x} ${y}`}
                 value={sc}
-                x={x}
-                y={y}
                 nextPlayer={props.nextPlayer}
                 onClick={() => props.handleBoardClick(x, y)}
                 handleMouseEnter={() => props.handleSquareMouseEnter(x, y)}
