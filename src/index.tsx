@@ -187,8 +187,8 @@ function Board(props: BoardProps): JSX.Element {
 }
 
 function Game(): JSX.Element {
-  const BOARD_HEIGHT = 4;
-  const BOARD_WIDTH = 4;
+  const BOARD_HEIGHT = 8;
+  const BOARD_WIDTH = 8;
   const [isHumanNext, setIsHumanNext] = useState(true);
   const nextPlayer = isHumanNext ? Marker.HUMAN : Marker.BOT;
   const [boardArray, setBoardArray] = useState(
