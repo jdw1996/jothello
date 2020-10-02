@@ -201,6 +201,21 @@ function Game(): JSX.Element {
   const status = isGameFinished
     ? 'Game over.'
     : `Next player: ${markerToStr(nextPlayer)}`;
+  let humanCount = 0;
+  let botCount = 0;
+  for (let i = 0; i < BOARD_WIDTH; ++i) {
+    for (let j = 0; j < BOARD_HEIGHT; ++j) {
+      if (boardArray[j][i].marker === Marker.HUMAN) {
+        ++humanCount;
+      }
+      if (boardArray[j][i].marker === Marker.BOT) {
+        ++botCount;
+      }
+    }
+  }
+  const score = `The score is ${humanCount} for ${markerToStr(
+    Marker.HUMAN,
+  )} and ${botCount} for ${markerToStr(Marker.BOT)}.`;
 
   const handleBoardClick = (x: number, y: number) => {
     if (isGameFinished) {
@@ -259,6 +274,7 @@ function Game(): JSX.Element {
   return (
     <div className="game">
       <div className="status">{status}</div>
+      <div className="score">{score}</div>
       <div className="game-board">
         <Board
           boardArray={boardArray}
