@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
-import { updateConstructorTypeNode } from 'typescript';
 import './index.css';
 
 enum Marker {
