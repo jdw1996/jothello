@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
+import { updateConstructorTypeNode } from 'typescript';
 import './index.css';
 
 enum Marker {
@@ -22,17 +23,17 @@ function getMarker(isHuman: boolean): Marker {
   return isHuman ? Marker.HUMAN : Marker.BOT;
 }
 
+function otherPlayer(marker: Marker): Marker {
+  return marker === Marker.HUMAN ? Marker.BOT : Marker.HUMAN;
+}
+
 interface SquareContent {
   marker: Marker;
   isValidMove: boolean;
   wouldBeFlipped: boolean;
 }
 
-function createBoardArray(
-  width: number,
-  height: number,
-  nextPlayer: Marker,
-): SquareContent[][] {
+function createBoardArray(width: number, height: number, nextPlayer: Marker): SquareContent[][] {
   const ret: SquareContent[][] = [];
   for (let j = 0; j < height; ++j) {
     const row = [];
@@ -83,30 +84,20 @@ function flippableInDirection(
   }
 }
 
-function flippablePositions(
-  board: SquareContent[][],
-  x: number,
-  y: number,
-  player: Marker,
-): [number, number][] {
+function flippablePositions(board: SquareContent[][], x: number, y: number, player: Marker): [number, number][] {
   if (board[y][x].marker !== Marker.FREE) {
     return [];
   }
   let flippable: [number, number][] = [];
   for (let i = -1; i <= 1; ++i) {
     for (let j = -1; j <= 1; ++j) {
-      flippable = flippable.concat(
-        flippableInDirection(board, x, y, i, j, player),
-      );
+      flippable = flippable.concat(flippableInDirection(board, x, y, i, j, player));
     }
   }
   return flippable;
 }
 
-function getValidMoves(
-  boardArray: SquareContent[][],
-  nextPlayer: Marker,
-): Map<string, [number, number][]> {
+function getValidMoves(boardArray: SquareContent[][], nextPlayer: Marker): Map<string, [number, number][]> {
   const validMoves = new Map<string, [number, number][]>();
   for (let i = 0; i < boardArray.length; ++i) {
     for (let j = 0; j < boardArray[0].length; ++j) {
@@ -158,71 +149,22 @@ function Square(props: SquareProps): JSX.Element {
 }
 
 interface BoardProps {
-  boardArray: SquareContent[][];
+  boardWidth: number;
+  boardHeight: number;
   nextPlayer: Marker;
-  handleBoardClick: (x: number, y: number) => void;
-  handleSquareMouseEnter: (x: number, y: number) => void;
-  handleSquareMouseLeave: () => void;
+  flipped: (numFlipped: number) => void;
+  isGameOver: boolean;
+  gameIsOver: () => void;
+  otherPlayersTurn: () => void;
 }
 
 function Board(props: BoardProps): JSX.Element {
-  return (
-    <div>
-      <table>
-        <tbody>
-          {props.boardArray.map((row, y) => (
-            <tr key={y} className="board-row">
-              {row.map((sc, x) => (
-                <Square
-                  key={`${x} ${y}`}
-                  value={sc}
-                  nextPlayer={props.nextPlayer}
-                  onClick={() => props.handleBoardClick(x, y)}
-                  handleMouseEnter={() => props.handleSquareMouseEnter(x, y)}
-                  handleMouseLeave={props.handleSquareMouseLeave}
-                />
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function Game(): JSX.Element {
-  const BOARD_HEIGHT = 8;
-  const BOARD_WIDTH = 8;
-  const [isHumanNext, setIsHumanNext] = useState(true);
-  const nextPlayer = getMarker(isHumanNext);
-  const [boardArray, setBoardArray] = useState(
-    createBoardArray(BOARD_WIDTH, BOARD_HEIGHT, nextPlayer),
-  );
-  const [isGameFinished, setIsGameFinished] = useState(false);
-  const [validMoves, setValidMoves] = useState(
-    getValidMoves(boardArray, nextPlayer),
-  );
-  const status = isGameFinished
-    ? 'Game over.'
-    : `Next player: ${markerToStr(nextPlayer)}`;
-  let humanCount = 0;
-  let botCount = 0;
-  for (let i = 0; i < BOARD_WIDTH; ++i) {
-    for (let j = 0; j < BOARD_HEIGHT; ++j) {
-      if (boardArray[j][i].marker === Marker.HUMAN) {
-        ++humanCount;
-      }
-      if (boardArray[j][i].marker === Marker.BOT) {
-        ++botCount;
-      }
-    }
-  }
-  const score = `The score is ${humanCount} for ${markerToStr(
-    Marker.HUMAN,
-  )} and ${botCount} for ${markerToStr(Marker.BOT)}.`;
+  const { boardWidth, boardHeight, nextPlayer, flipped, isGameOver, gameIsOver, otherPlayersTurn } = props;
+  const [boardArray, setBoardArray] = useState(createBoardArray(boardWidth, boardHeight, nextPlayer));
+  const [validMoves, setValidMoves] = useState(getValidMoves(boardArray, nextPlayer));
 
   const handleBoardClick = (x: number, y: number) => {
-    if (isGameFinished) {
+    if (isGameOver) {
       return;
     }
     const currentKey = `${x},${y}`;
@@ -234,17 +176,19 @@ function Game(): JSX.Element {
     for (const [i, j] of validMoves.get(currentKey) || []) {
       boardArrayClone[j][i].marker = nextPlayer;
     }
-    let newValidMoves = getValidMoves(boardArrayClone, getMarker(!isHumanNext));
+    const numFlipped = validMoves.get(currentKey)?.length || 0;
+    flipped(numFlipped);
+    let newValidMoves = getValidMoves(boardArrayClone, otherPlayer(nextPlayer));
     if (newValidMoves.size === 0) {
       newValidMoves = getValidMoves(boardArrayClone, nextPlayer);
       if (newValidMoves.size === 0) {
-        setIsGameFinished(true);
+        gameIsOver();
       }
     } else {
-      setIsHumanNext(!isHumanNext);
+      otherPlayersTurn();
     }
-    for (let i = 0; i < BOARD_WIDTH; ++i) {
-      for (let j = 0; j < BOARD_HEIGHT; ++j) {
+    for (let i = 0; i < boardWidth; ++i) {
+      for (let j = 0; j < boardHeight; ++j) {
         boardArrayClone[j][i].isValidMove = newValidMoves.has(`${i},${j}`);
         boardArrayClone[j][i].wouldBeFlipped = false;
       }
@@ -252,6 +196,7 @@ function Game(): JSX.Element {
     setBoardArray(boardArrayClone);
     setValidMoves(newValidMoves);
   };
+
   const handleSquareMouseEnter = (x: number, y: number) => {
     const currentKey = `${x},${y}`;
     if (!validMoves.has(currentKey)) {
@@ -272,17 +217,66 @@ function Game(): JSX.Element {
     }
     setBoardArray(boardArrayClone);
   };
+
+  return (
+    <div>
+      <table>
+        <tbody>
+          {boardArray.map((row, y) => (
+            <tr key={y} className="board-row">
+              {row.map((sc, x) => (
+                <Square
+                  key={`${x} ${y}`}
+                  value={sc}
+                  nextPlayer={nextPlayer}
+                  onClick={() => handleBoardClick(x, y)}
+                  handleMouseEnter={() => handleSquareMouseEnter(x, y)}
+                  handleMouseLeave={handleSquareMouseLeave}
+                />
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function Game(): JSX.Element {
+  const BOARD_HEIGHT = 8;
+  const BOARD_WIDTH = 8;
+  const [isHumanNext, setIsHumanNext] = useState(true);
+  const nextPlayer = getMarker(isHumanNext);
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [score, setScore] = useState([2, 2]);
+
+  function flipped(numFlipped: number): void {
+    const newScore = score.slice();
+    if (isHumanNext) {
+      newScore[0] += 1 + numFlipped;
+      newScore[1] -= numFlipped;
+    } else {
+      newScore[0] -= numFlipped;
+      newScore[1] += 1 + numFlipped;
+    }
+    setScore(newScore);
+  }
+
   return (
     <div className="game">
-      <div className="status">{status}</div>
-      <div className="score">{score}</div>
+      <div className="status">{isGameOver ? 'Game over.\n' : `Next player: ${markerToStr(nextPlayer)}\n`}</div>
+      <div className="score">{`The score is ${score[0]} for ${markerToStr(Marker.HUMAN)} and ${
+        score[1]
+      } for ${markerToStr(Marker.BOT)}.`}</div>
       <div className="game-board">
         <Board
-          boardArray={boardArray}
+          boardWidth={BOARD_WIDTH}
+          boardHeight={BOARD_HEIGHT}
           nextPlayer={nextPlayer}
-          handleBoardClick={handleBoardClick}
-          handleSquareMouseEnter={handleSquareMouseEnter}
-          handleSquareMouseLeave={handleSquareMouseLeave}
+          isGameOver={isGameOver}
+          gameIsOver={() => setIsGameOver(true)}
+          otherPlayersTurn={() => setIsHumanNext(!isHumanNext)}
+          flipped={flipped}
         />
       </div>
     </div>
