@@ -18,6 +18,10 @@ function markerToStr(marker: Marker): string {
   }
 }
 
+function getMarker(isHuman: boolean): Marker {
+  return isHuman ? Marker.HUMAN : Marker.BOT;
+}
+
 interface SquareContent {
   marker: Marker;
   isValidMove: boolean;
@@ -190,7 +194,7 @@ function Game(): JSX.Element {
   const BOARD_HEIGHT = 8;
   const BOARD_WIDTH = 8;
   const [isHumanNext, setIsHumanNext] = useState(true);
-  const nextPlayer = isHumanNext ? Marker.HUMAN : Marker.BOT;
+  const nextPlayer = getMarker(isHumanNext);
   const [boardArray, setBoardArray] = useState(
     createBoardArray(BOARD_WIDTH, BOARD_HEIGHT, nextPlayer),
   );
@@ -230,10 +234,7 @@ function Game(): JSX.Element {
     for (const [i, j] of validMoves.get(currentKey) || []) {
       boardArrayClone[j][i].marker = nextPlayer;
     }
-    let newValidMoves = getValidMoves(
-      boardArrayClone,
-      isHumanNext ? Marker.BOT : Marker.HUMAN,
-    );
+    let newValidMoves = getValidMoves(boardArrayClone, getMarker(!isHumanNext));
     if (newValidMoves.size === 0) {
       newValidMoves = getValidMoves(boardArrayClone, nextPlayer);
       if (newValidMoves.size === 0) {
