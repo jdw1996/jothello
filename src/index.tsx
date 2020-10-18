@@ -58,6 +58,17 @@ function createBoardArray(width: number, height: number, nextPlayer: Marker): Sq
   return ret;
 }
 
+function modifySquareContents(
+  board: SquareContent[][],
+  modifier: (target: SquareContent, i: number, j: number) => void,
+) {
+  for (let j = 0; j < board.length; ++j) {
+    for (let i = 0; i < board[j].length; ++i) {
+      modifier(board[j][i], i, j);
+    }
+  }
+}
+
 function flippableInDirection(
   board: SquareContent[][],
   x: number,
@@ -98,14 +109,12 @@ function flippablePositions(board: SquareContent[][], x: number, y: number, play
 
 function getValidMoves(boardArray: SquareContent[][], nextPlayer: Marker): Map<string, [number, number][]> {
   const validMoves = new Map<string, [number, number][]>();
-  for (let i = 0; i < boardArray.length; ++i) {
-    for (let j = 0; j < boardArray[0].length; ++j) {
-      const flippable = flippablePositions(boardArray, i, j, nextPlayer);
-      if (flippable.length > 0) {
-        validMoves.set(`${i},${j}`, flippable);
-      }
+  modifySquareContents(boardArray, (_target, x, y) => {
+    const flippable = flippablePositions(boardArray, x, y, nextPlayer);
+    if (flippable.length > 0) {
+      validMoves.set(`${x},${y}`, flippable);
     }
-  }
+  });
   return validMoves;
 }
 
@@ -175,8 +184,7 @@ function Board(props: BoardProps): JSX.Element {
     for (const [i, j] of validMoves.get(currentKey) || []) {
       boardArrayClone[j][i].marker = nextPlayer;
     }
-    const numFlipped = validMoves.get(currentKey)?.length || 0;
-    flipped(numFlipped);
+    flipped(validMoves.get(currentKey)?.length || 0);
     let newValidMoves = getValidMoves(boardArrayClone, otherPlayer(nextPlayer));
     if (newValidMoves.size === 0) {
       newValidMoves = getValidMoves(boardArrayClone, nextPlayer);
@@ -186,33 +194,22 @@ function Board(props: BoardProps): JSX.Element {
     } else {
       otherPlayersTurn();
     }
-    for (let i = 0; i < boardWidth; ++i) {
-      for (let j = 0; j < boardHeight; ++j) {
-        boardArrayClone[j][i].isValidMove = newValidMoves.has(`${i},${j}`);
-        boardArrayClone[j][i].wouldBeFlipped = false;
-      }
-    }
+    modifySquareContents(boardArrayClone, (target, x, y) => {
+      target.isValidMove = newValidMoves.has(`${x},${y}`);
+      target.wouldBeFlipped = false;
+    });
     setBoardArray(boardArrayClone);
     setValidMoves(newValidMoves);
   };
 
-  const handleSquareMouseEnter = (x: number, y: number) => {
+  const handleHover = (x: number, y: number, isEnter: boolean) => {
     const currentKey = `${x},${y}`;
     if (!validMoves.has(currentKey)) {
       return;
     }
     const boardArrayClone = boardArray.slice();
     for (const [i, j] of validMoves.get(currentKey) || []) {
-      boardArrayClone[j][i].wouldBeFlipped = true;
-    }
-    setBoardArray(boardArrayClone);
-  };
-  const handleSquareMouseLeave = () => {
-    const boardArrayClone = boardArray.slice();
-    for (let i = 0; i < boardArrayClone[0].length; ++i) {
-      for (let j = 0; j < boardArrayClone.length; ++j) {
-        boardArrayClone[j][i].wouldBeFlipped = false;
-      }
+      boardArrayClone[j][i].wouldBeFlipped = isEnter;
     }
     setBoardArray(boardArrayClone);
   };
@@ -229,8 +226,8 @@ function Board(props: BoardProps): JSX.Element {
                   value={sc}
                   nextPlayer={nextPlayer}
                   onClick={() => handleBoardClick(x, y)}
-                  handleMouseEnter={() => handleSquareMouseEnter(x, y)}
-                  handleMouseLeave={handleSquareMouseLeave}
+                  handleMouseEnter={() => handleHover(x, y, true)}
+                  handleMouseLeave={() => handleHover(x, y, false)}
                 />
               ))}
             </tr>
