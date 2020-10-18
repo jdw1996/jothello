@@ -172,19 +172,28 @@ function Board(props: BoardProps): JSX.Element {
   const [validMoves, setValidMoves] = useState(getValidMoves(boardArray, nextPlayer));
 
   const handleBoardClick = (x: number, y: number) => {
+    // If the game is over, no more moves can be made.
     if (isGameOver) {
       return;
     }
+
+    // If the clicked square is an invalid move, we do nothing.
     const currentKey = `${x},${y}`;
     if (!validMoves.has(currentKey)) {
       return;
     }
+
+    // Since the move is valid, we save it and flip the appropriate pieces.
     const boardArrayClone = boardArray.slice();
     boardArrayClone[y][x].marker = nextPlayer;
     for (const [i, j] of validMoves.get(currentKey) || []) {
       boardArrayClone[j][i].marker = nextPlayer;
     }
     flipped(validMoves.get(currentKey)?.length || 0);
+
+    // Get the valid moves for the other player. If there are none, then the
+    // current player gets another turn. If the current player has none either,
+    // then the game is over.
     let newValidMoves = getValidMoves(boardArrayClone, otherPlayer(nextPlayer));
     if (newValidMoves.size === 0) {
       newValidMoves = getValidMoves(boardArrayClone, nextPlayer);
@@ -194,10 +203,14 @@ function Board(props: BoardProps): JSX.Element {
     } else {
       otherPlayersTurn();
     }
+
+    // Reset the valid moves marked on the board.
     modifySquareContents(boardArrayClone, (target, x, y) => {
       target.isValidMove = newValidMoves.has(`${x},${y}`);
       target.wouldBeFlipped = false;
     });
+
+    // Persist the board changes and the new set of valid moves.
     setBoardArray(boardArrayClone);
     setValidMoves(newValidMoves);
   };
