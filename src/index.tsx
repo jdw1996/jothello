@@ -127,31 +127,27 @@ interface SquareProps {
 }
 
 function Square(props: SquareProps): JSX.Element {
+  const { value, nextPlayer, onClick, handleMouseEnter, handleMouseLeave } = props;
   let cssClasses = 'square';
-  if (props.value.isValidMove) {
+  if (value.isValidMove) {
     cssClasses += ' valid-move';
-    if (props.nextPlayer === Marker.HUMAN) {
+    if (nextPlayer === Marker.HUMAN) {
       cssClasses += ' valid-human-move';
     } else {
       cssClasses += ' valid-bot-move';
     }
   }
-  if (props.value.wouldBeFlipped) {
+  if (value.wouldBeFlipped) {
     cssClasses += ' would-be-flipped';
-    if (props.nextPlayer === Marker.HUMAN) {
+    if (nextPlayer === Marker.HUMAN) {
       cssClasses += ' would-be-flipped-human';
     } else {
       cssClasses += ' would-be-flipped-bot';
     }
   }
   return (
-    <td
-      className={cssClasses}
-      onClick={props.onClick}
-      onMouseEnter={props.handleMouseEnter}
-      onMouseLeave={props.handleMouseLeave}
-    >
-      {markerToStr(props.value.marker)}
+    <td className={cssClasses} onClick={onClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      {markerToStr(value.marker)}
     </td>
   );
 }
