@@ -22,10 +22,6 @@ function getMarker(isHuman: boolean): Marker {
   return isHuman ? Marker.HUMAN : Marker.BOT;
 }
 
-function otherPlayer(marker: Marker): Marker {
-  return marker === Marker.HUMAN ? Marker.BOT : Marker.HUMAN;
-}
-
 interface SquareContent {
   marker: Marker;
   isValidMove: boolean;
@@ -118,32 +114,42 @@ function getValidMoves(boardArray: SquareContent[][], nextPlayer: Marker): Map<s
   return validMoves;
 }
 
+function flipped(currentScore: [number, number], numFlipped: number, isHumanMove: boolean): [number, number] {
+  const newScore: [number, number] = [...currentScore];
+  if (isHumanMove) {
+    newScore[0] += 1 + numFlipped;
+    newScore[1] -= numFlipped;
+  } else {
+    newScore[0] -= numFlipped;
+    newScore[1] += 1 + numFlipped;
+  }
+  return newScore;
+}
+
+function botGo(validMoves: Map<string, [number, number][]>): string {
+  let ret = '';
+  for (const [key] of validMoves) {
+    ret = key;
+    break;
+  }
+  return ret;
+}
+
 interface SquareProps {
   value: SquareContent;
-  nextPlayer: Marker;
   onClick: () => void;
   handleMouseEnter: () => void;
   handleMouseLeave: () => void;
 }
 
 function Square(props: SquareProps): JSX.Element {
-  const { value, nextPlayer, onClick, handleMouseEnter, handleMouseLeave } = props;
+  const { value, onClick, handleMouseEnter, handleMouseLeave } = props;
   let cssClasses = 'square';
   if (value.isValidMove) {
-    cssClasses += ' valid-move';
-    if (nextPlayer === Marker.HUMAN) {
-      cssClasses += ' valid-human-move';
-    } else {
-      cssClasses += ' valid-bot-move';
-    }
+    cssClasses += ' valid-human-move';
   }
   if (value.wouldBeFlipped) {
-    cssClasses += ' would-be-flipped';
-    if (nextPlayer === Marker.HUMAN) {
-      cssClasses += ' would-be-flipped-human';
-    } else {
-      cssClasses += ' would-be-flipped-bot';
-    }
+    cssClasses += ' would-be-flipped-human';
   }
   return (
     <td className={cssClasses} onClick={onClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
@@ -156,16 +162,17 @@ interface BoardProps {
   boardWidth: number;
   boardHeight: number;
   nextPlayer: Marker;
-  flipped: (numFlipped: number) => void;
   isGameOver: boolean;
   gameIsOver: () => void;
   otherPlayersTurn: () => void;
+  currentScore: [number, number];
+  updateScore: (score: [number, number]) => void;
 }
 
 function Board(props: BoardProps): JSX.Element {
-  const { boardWidth, boardHeight, nextPlayer, flipped, isGameOver, gameIsOver, otherPlayersTurn } = props;
-  const [boardArray, setBoardArray] = useState(createBoardArray(boardWidth, boardHeight, nextPlayer));
-  const [validMoves, setValidMoves] = useState(getValidMoves(boardArray, nextPlayer));
+  const { boardWidth, boardHeight, isGameOver, gameIsOver, currentScore, updateScore } = props;
+  const [boardArray, setBoardArray] = useState(createBoardArray(boardWidth, boardHeight, Marker.HUMAN));
+  const [validMoves, setValidMoves] = useState(getValidMoves(boardArray, Marker.HUMAN));
 
   const handleBoardClick = (x: number, y: number) => {
     // If the game is over, no more moves can be made.
@@ -181,23 +188,38 @@ function Board(props: BoardProps): JSX.Element {
 
     // Since the move is valid, we save it and flip the appropriate pieces.
     const boardArrayClone = boardArray.slice();
-    boardArrayClone[y][x].marker = nextPlayer;
+    boardArrayClone[y][x].marker = Marker.HUMAN;
     for (const [i, j] of validMoves.get(currentKey) || []) {
-      boardArrayClone[j][i].marker = nextPlayer;
+      boardArrayClone[j][i].marker = Marker.HUMAN;
     }
-    flipped(validMoves.get(currentKey)?.length || 0);
+    let newScore = flipped(currentScore, validMoves.get(currentKey)?.length || 0, true);
+    let newValidMoves: Map<string, [number, number][]> = validMoves;
 
-    // Get the valid moves for the other player. If there are none, then the
-    // current player gets another turn. If the current player has none either,
-    // then the game is over.
-    let newValidMoves = getValidMoves(boardArrayClone, otherPlayer(nextPlayer));
-    if (newValidMoves.size === 0) {
-      newValidMoves = getValidMoves(boardArrayClone, nextPlayer);
+    while (true) {
+      let botPassed = false;
+      newValidMoves = getValidMoves(boardArrayClone, Marker.BOT);
       if (newValidMoves.size === 0) {
-        gameIsOver();
+        botPassed = true;
+      } else {
+        const botMove = botGo(newValidMoves);
+        const [botMoveX, botMoveY] = botMove.split(',').map(Number);
+        boardArrayClone[botMoveY][botMoveX].marker = Marker.BOT;
+        for (const [i, j] of newValidMoves.get(botMove) || []) {
+          boardArrayClone[j][i].marker = Marker.BOT;
+        }
+        newScore = flipped(newScore, newValidMoves.get(botMove)?.length || 0, false);
       }
-    } else {
-      otherPlayersTurn();
+      newValidMoves = getValidMoves(boardArrayClone, Marker.HUMAN);
+      if (newValidMoves.size === 0) {
+        if (botPassed) {
+          gameIsOver();
+          break;
+        } else {
+          continue;
+        }
+      } else {
+        break;
+      }
     }
 
     // Reset the valid moves marked on the board.
@@ -206,9 +228,10 @@ function Board(props: BoardProps): JSX.Element {
       target.wouldBeFlipped = false;
     });
 
-    // Persist the board changes and the new set of valid moves.
+    // Persist the board changes, the new set of valid moves, and the new score.
     setBoardArray(boardArrayClone);
     setValidMoves(newValidMoves);
+    updateScore(newScore);
   };
 
   const handleHover = (x: number, y: number, isEnter: boolean) => {
@@ -233,7 +256,6 @@ function Board(props: BoardProps): JSX.Element {
                 <Square
                   key={`${x} ${y}`}
                   value={sc}
-                  nextPlayer={nextPlayer}
                   onClick={() => handleBoardClick(x, y)}
                   handleMouseEnter={() => handleHover(x, y, true)}
                   handleMouseLeave={() => handleHover(x, y, false)}
@@ -253,19 +275,7 @@ function Game(): JSX.Element {
   const [isHumanNext, setIsHumanNext] = useState(true);
   const nextPlayer = getMarker(isHumanNext);
   const [isGameOver, setIsGameOver] = useState(false);
-  const [score, setScore] = useState([2, 2]);
-
-  function flipped(numFlipped: number): void {
-    const newScore = score.slice();
-    if (isHumanNext) {
-      newScore[0] += 1 + numFlipped;
-      newScore[1] -= numFlipped;
-    } else {
-      newScore[0] -= numFlipped;
-      newScore[1] += 1 + numFlipped;
-    }
-    setScore(newScore);
-  }
+  const [score, setScore] = useState<[number, number]>([2, 2]);
 
   return (
     <div className="game">
@@ -281,7 +291,8 @@ function Game(): JSX.Element {
           isGameOver={isGameOver}
           gameIsOver={() => setIsGameOver(true)}
           otherPlayersTurn={() => setIsHumanNext(!isHumanNext)}
-          flipped={flipped}
+          currentScore={score}
+          updateScore={setScore}
         />
       </div>
     </div>
