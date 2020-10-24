@@ -22,11 +22,11 @@ function getMarker(isHuman: boolean): Marker {
   return isHuman ? Marker.HUMAN : Marker.BOT;
 }
 
-interface SquareContent {
+type SquareContent = {
   marker: Marker;
   isValidMove: boolean;
   wouldBeFlipped: boolean;
-}
+};
 
 function createBoardArray(width: number, height: number, nextPlayer: Marker): SquareContent[][] {
   const ret: SquareContent[][] = [];
@@ -135,12 +135,12 @@ function botGo(validMoves: Map<string, [number, number][]>): string {
   return ret;
 }
 
-interface SquareProps {
+type SquareProps = {
   value: SquareContent;
   onClick: () => void;
   handleMouseEnter: () => void;
   handleMouseLeave: () => void;
-}
+};
 
 function Square(props: SquareProps): JSX.Element {
   const { value, onClick, handleMouseEnter, handleMouseLeave } = props;
@@ -158,7 +158,7 @@ function Square(props: SquareProps): JSX.Element {
   );
 }
 
-interface BoardProps {
+type BoardProps = {
   boardWidth: number;
   boardHeight: number;
   nextPlayer: Marker;
@@ -166,7 +166,7 @@ interface BoardProps {
   gameIsOver: () => void;
   otherPlayersTurn: () => void;
   updateScore: (score: [number, number]) => void;
-}
+};
 
 function Board(props: BoardProps): JSX.Element {
   const { boardWidth, boardHeight, isGameOver, gameIsOver, updateScore } = props;
