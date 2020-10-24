@@ -28,8 +28,13 @@ type SquareContent = {
   wouldBeFlipped: boolean;
 };
 
-function createBoardArray(width: number, height: number, nextPlayer: Marker): SquareContent[][] {
-  const ret: SquareContent[][] = [];
+type BoardArray = SquareContent[][];
+type Score = [number, number];
+type Coordinate = [number, number];
+type ValidMoves = Map<string, Coordinate[]>;
+
+function createBoardArray(width: number, height: number, nextPlayer: Marker): BoardArray {
+  const ret: BoardArray = [];
   for (let j = 0; j < height; ++j) {
     const row = [];
     for (let i = 0; i < width; ++i) {
@@ -54,10 +59,7 @@ function createBoardArray(width: number, height: number, nextPlayer: Marker): Sq
   return ret;
 }
 
-function modifySquareContents(
-  board: SquareContent[][],
-  modifier: (target: SquareContent, i: number, j: number) => void,
-) {
+function modifySquareContents(board: BoardArray, modifier: (target: SquareContent, i: number, j: number) => void) {
   for (let j = 0; j < board.length; ++j) {
     for (let i = 0; i < board[j].length; ++i) {
       modifier(board[j][i], i, j);
@@ -66,14 +68,14 @@ function modifySquareContents(
 }
 
 function flippableInDirection(
-  board: SquareContent[][],
+  board: BoardArray,
   x: number,
   y: number,
   i: number,
   j: number,
   player: Marker,
-): [number, number][] {
-  const flippable: [number, number][] = [];
+): Coordinate[] {
+  const flippable: Coordinate[] = [];
   while (true) {
     x += i;
     y += j;
@@ -90,11 +92,11 @@ function flippableInDirection(
   }
 }
 
-function flippablePositions(board: SquareContent[][], x: number, y: number, player: Marker): [number, number][] {
+function flippablePositions(board: BoardArray, x: number, y: number, player: Marker): Coordinate[] {
   if (board[y][x].marker !== Marker.FREE) {
     return [];
   }
-  let flippable: [number, number][] = [];
+  let flippable: Coordinate[] = [];
   for (let i = -1; i <= 1; ++i) {
     for (let j = -1; j <= 1; ++j) {
       flippable = flippable.concat(flippableInDirection(board, x, y, i, j, player));
@@ -103,10 +105,10 @@ function flippablePositions(board: SquareContent[][], x: number, y: number, play
   return flippable;
 }
 
-function getValidMoves(boardArray: SquareContent[][], nextPlayer: Marker): Map<string, [number, number][]> {
-  const validMoves = new Map<string, [number, number][]>();
-  modifySquareContents(boardArray, (_target, x, y) => {
-    const flippable = flippablePositions(boardArray, x, y, nextPlayer);
+function getValidMoves(board: BoardArray, nextPlayer: Marker): ValidMoves {
+  const validMoves: ValidMoves = new Map<string, Coordinate[]>();
+  modifySquareContents(board, (_target, x, y) => {
+    const flippable = flippablePositions(board, x, y, nextPlayer);
     if (flippable.length > 0) {
       validMoves.set(`${x},${y}`, flippable);
     }
@@ -114,8 +116,8 @@ function getValidMoves(boardArray: SquareContent[][], nextPlayer: Marker): Map<s
   return validMoves;
 }
 
-function flipped(currentScore: [number, number], numFlipped: number, isHumanMove: boolean): [number, number] {
-  const newScore: [number, number] = [...currentScore];
+function flipped(currentScore: Score, numFlipped: number, isHumanMove: boolean): Score {
+  const newScore: Score = [...currentScore];
   if (isHumanMove) {
     newScore[0] += 1 + numFlipped;
     newScore[1] -= numFlipped;
@@ -126,7 +128,7 @@ function flipped(currentScore: [number, number], numFlipped: number, isHumanMove
   return newScore;
 }
 
-function botGo(validMoves: Map<string, [number, number][]>): string {
+function botGo(validMoves: ValidMoves): string {
   let ret = '';
   for (const [key] of validMoves) {
     ret = key;
@@ -165,13 +167,13 @@ type BoardProps = {
   isGameOver: boolean;
   gameIsOver: () => void;
   otherPlayersTurn: () => void;
-  updateScore: (score: [number, number]) => void;
+  updateScore: (score: Score) => void;
 };
 
 function Board(props: BoardProps): JSX.Element {
   const { boardWidth, boardHeight, isGameOver, gameIsOver, updateScore } = props;
-  const [boardArray, setBoardArray] = useState(createBoardArray(boardWidth, boardHeight, Marker.HUMAN));
-  const [validMoves, setValidMoves] = useState(getValidMoves(boardArray, Marker.HUMAN));
+  const [board, setBoard] = useState(createBoardArray(boardWidth, boardHeight, Marker.HUMAN));
+  const [validMoves, setValidMoves] = useState(getValidMoves(board, Marker.HUMAN));
 
   const handleBoardClick = (x: number, y: number) => {
     // If the game is over, no more moves can be made.
@@ -186,13 +188,13 @@ function Board(props: BoardProps): JSX.Element {
     }
 
     // Since the move is valid, we save it and flip the appropriate pieces.
-    const boardArrayClone = boardArray.slice();
+    const boardArrayClone = board.slice();
     boardArrayClone[y][x].marker = Marker.HUMAN;
     for (const [i, j] of validMoves.get(currentKey) || []) {
       boardArrayClone[j][i].marker = Marker.HUMAN;
     }
     let scoreDiff = flipped([0, 0], validMoves.get(currentKey)?.length || 0, true);
-    let newValidMoves: Map<string, [number, number][]> = validMoves;
+    let newValidMoves: ValidMoves = validMoves;
 
     while (true) {
       let botPassed = false;
@@ -230,7 +232,7 @@ function Board(props: BoardProps): JSX.Element {
     });
 
     // Persist the board changes, the new set of valid moves, and the new score.
-    setBoardArray(boardArrayClone);
+    setBoard(boardArrayClone);
     setValidMoves(newValidMoves);
     updateScore(scoreDiff);
   };
@@ -240,18 +242,18 @@ function Board(props: BoardProps): JSX.Element {
     if (!validMoves.has(currentKey)) {
       return;
     }
-    const boardArrayClone = boardArray.slice();
+    const boardClone = board.slice();
     for (const [i, j] of validMoves.get(currentKey) || []) {
-      boardArrayClone[j][i].wouldBeFlipped = isEnter;
+      boardClone[j][i].wouldBeFlipped = isEnter;
     }
-    setBoardArray(boardArrayClone);
+    setBoard(boardClone);
   };
 
   return (
     <div>
       <table>
         <tbody>
-          {boardArray.map((row, y) => (
+          {board.map((row, y) => (
             <tr key={y} className="board-row">
               {row.map((sc, x) => (
                 <Square
@@ -276,10 +278,10 @@ function Game(): JSX.Element {
   const [isHumanNext, setIsHumanNext] = useState(true);
   const nextPlayer = getMarker(isHumanNext);
   const [isGameOver, setIsGameOver] = useState(false);
-  const [score, setScore] = useState<[number, number]>([2, 2]);
+  const [score, setScore] = useState<Score>([2, 2]);
 
-  function updateScore(diff: [number, number]): void {
-    const newScore = score.slice();
+  function updateScore(diff: Score): void {
+    const newScore: Score = [...score];
     newScore[0] += diff[0];
     newScore[1] += diff[1];
     setScore(newScore);
