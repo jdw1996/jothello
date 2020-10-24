@@ -128,6 +128,13 @@ function flipped(currentScore: Score, numFlipped: number, isHumanMove: boolean):
   return newScore;
 }
 
+function takeMove(board: BoardArray, player: Marker, position: Coordinate, toFlip: Coordinate[]): void {
+  board[position[1]][position[0]].marker = player;
+  for (const [i, j] of toFlip) {
+    board[j][i].marker = player;
+  }
+}
+
 function botGo(validMoves: ValidMoves): string {
   let ret = '';
   for (const [key] of validMoves) {
@@ -188,11 +195,8 @@ function Board(props: BoardProps): JSX.Element {
     }
 
     // Since the move is valid, we save it and flip the appropriate pieces.
-    const boardArrayClone = board.slice();
-    boardArrayClone[y][x].marker = Marker.HUMAN;
-    for (const [i, j] of validMoves.get(currentKey) || []) {
-      boardArrayClone[j][i].marker = Marker.HUMAN;
-    }
+    const boardClone = board.slice();
+    takeMove(boardClone, Marker.HUMAN, [x, y], validMoves.get(currentKey) || []);
     let scoreDiff = flipped([0, 0], validMoves.get(currentKey)?.length || 0, true);
     let newValidMoves: ValidMoves = validMoves;
 
@@ -200,19 +204,16 @@ function Board(props: BoardProps): JSX.Element {
       let botPassed = false;
       // TODO: Pull most of this logic into a separate function that outputs numFlipped.
       // Maybe just put it in botGo.
-      newValidMoves = getValidMoves(boardArrayClone, Marker.BOT);
+      newValidMoves = getValidMoves(boardClone, Marker.BOT);
       if (newValidMoves.size === 0) {
         botPassed = true;
       } else {
         const botMove = botGo(newValidMoves);
         const [botMoveX, botMoveY] = botMove.split(',').map(Number);
-        boardArrayClone[botMoveY][botMoveX].marker = Marker.BOT;
-        for (const [i, j] of newValidMoves.get(botMove) || []) {
-          boardArrayClone[j][i].marker = Marker.BOT;
-        }
+        takeMove(boardClone, Marker.BOT, [botMoveX, botMoveY], newValidMoves.get(botMove) || []);
         scoreDiff = flipped(scoreDiff, newValidMoves.get(botMove)?.length || 0, false);
       }
-      newValidMoves = getValidMoves(boardArrayClone, Marker.HUMAN);
+      newValidMoves = getValidMoves(boardClone, Marker.HUMAN);
       if (newValidMoves.size === 0) {
         if (botPassed) {
           gameIsOver();
@@ -226,13 +227,13 @@ function Board(props: BoardProps): JSX.Element {
     }
 
     // Reset the valid moves marked on the board.
-    modifySquareContents(boardArrayClone, (target, x, y) => {
+    modifySquareContents(boardClone, (target, x, y) => {
       target.isValidMove = newValidMoves.has(`${x},${y}`);
       target.wouldBeFlipped = false;
     });
 
     // Persist the board changes, the new set of valid moves, and the new score.
-    setBoard(boardArrayClone);
+    setBoard(boardClone);
     setValidMoves(newValidMoves);
     updateScore(scoreDiff);
   };
