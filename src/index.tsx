@@ -7,6 +7,15 @@ enum Marker {
   BOT,
   FREE,
 }
+type SquareContent = {
+  marker: Marker;
+  isValidMove: boolean;
+  wouldBeFlipped: boolean;
+};
+type BoardArray = SquareContent[][];
+type Score = [number, number];
+type Coordinate = [number, number];
+type ValidMoves = Map<string, Coordinate[]>;
 
 function markerToStr(marker: Marker): string {
   if (marker === Marker.HUMAN) {
@@ -22,16 +31,15 @@ function getMarker(isHuman: boolean): Marker {
   return isHuman ? Marker.HUMAN : Marker.BOT;
 }
 
-type SquareContent = {
-  marker: Marker;
-  isValidMove: boolean;
-  wouldBeFlipped: boolean;
-};
+function coordToString(coord: Coordinate): string {
+  return `${coord[0]},${coord[1]}`;
+}
 
-type BoardArray = SquareContent[][];
-type Score = [number, number];
-type Coordinate = [number, number];
-type ValidMoves = Map<string, Coordinate[]>;
+function stringToCoord(key: string): Coordinate {
+  const ret = key.split(',').map(Number);
+  if (ret.length === 2) return ret as Coordinate;
+  throw new Error('Cannot convert given string to Coordinate!');
+}
 
 function createBoardArray(width: number, height: number, nextPlayer: Marker): BoardArray {
   const ret: BoardArray = [];
@@ -53,8 +61,8 @@ function createBoardArray(width: number, height: number, nextPlayer: Marker): Bo
   ret[halfHeight - 1][halfWidth].marker = Marker.HUMAN;
   ret[halfHeight - 1][halfWidth - 1].marker = Marker.BOT;
   getValidMoves(ret, nextPlayer).forEach((_v, k) => {
-    const [x, y] = k.split(',');
-    ret[Number(y)][Number(x)].isValidMove = true;
+    const [x, y] = stringToCoord(k);
+    ret[y][x].isValidMove = true;
   });
   return ret;
 }
@@ -110,7 +118,7 @@ function getValidMoves(board: BoardArray, nextPlayer: Marker): ValidMoves {
   modifySquareContents(board, (_target, x, y) => {
     const flippable = flippablePositions(board, x, y, nextPlayer);
     if (flippable.length > 0) {
-      validMoves.set(`${x},${y}`, flippable);
+      validMoves.set(coordToString([x, y]), flippable);
     }
   });
   return validMoves;
@@ -189,7 +197,7 @@ function Board(props: BoardProps): JSX.Element {
     }
 
     // If the clicked square is an invalid move, we do nothing.
-    const currentKey = `${x},${y}`;
+    const currentKey = coordToString([x, y]);
     if (!validMoves.has(currentKey)) {
       return;
     }
@@ -209,9 +217,10 @@ function Board(props: BoardProps): JSX.Element {
         botPassed = true;
       } else {
         const botMove = botGo(newValidMoves);
-        const [botMoveX, botMoveY] = botMove.split(',').map(Number);
-        takeMove(boardClone, Marker.BOT, [botMoveX, botMoveY], newValidMoves.get(botMove) || []);
-        scoreDiff = flipped(scoreDiff, newValidMoves.get(botMove)?.length || 0, false);
+        const [botMoveX, botMoveY] = stringToCoord(botMove);
+        const flippedPosns: Coordinate[] = newValidMoves.get(botMove) || [];
+        takeMove(boardClone, Marker.BOT, [botMoveX, botMoveY], flippedPosns);
+        scoreDiff = flipped(scoreDiff, flippedPosns.length, false);
       }
       newValidMoves = getValidMoves(boardClone, Marker.HUMAN);
       if (newValidMoves.size === 0) {
@@ -228,7 +237,7 @@ function Board(props: BoardProps): JSX.Element {
 
     // Reset the valid moves marked on the board.
     modifySquareContents(boardClone, (target, x, y) => {
-      target.isValidMove = newValidMoves.has(`${x},${y}`);
+      target.isValidMove = newValidMoves.has(coordToString([x, y]));
       target.wouldBeFlipped = false;
     });
 
@@ -239,7 +248,7 @@ function Board(props: BoardProps): JSX.Element {
   };
 
   const handleHover = (x: number, y: number, isEnter: boolean) => {
-    const currentKey = `${x},${y}`;
+    const currentKey = coordToString([x, y]);
     if (!validMoves.has(currentKey)) {
       return;
     }
@@ -258,7 +267,7 @@ function Board(props: BoardProps): JSX.Element {
             <tr key={y} className="board-row">
               {row.map((sc, x) => (
                 <Square
-                  key={`${x} ${y}`}
+                  key={coordToString([x, y])}
                   value={sc}
                   onClick={() => handleBoardClick(x, y)}
                   handleMouseEnter={() => handleHover(x, y, true)}
