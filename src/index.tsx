@@ -143,13 +143,18 @@ function takeMove(board: BoardArray, player: Marker, position: Coordinate, toFli
   }
 }
 
-function botGo(validMoves: ValidMoves): string {
-  let ret = '';
+function botGo(board: BoardArray): number {
+  const validMoves = getValidMoves(board, Marker.BOT);
+  if (validMoves.size === 0) return 0;
+  let move = '';
   for (const [key] of validMoves) {
-    ret = key;
+    move = key;
     break;
   }
-  return ret;
+  const [x, y] = stringToCoord(move);
+  const flippedPosns: Coordinate[] = validMoves.get(move) || [];
+  takeMove(board, Marker.BOT, [x, y], flippedPosns);
+  return flippedPosns.length;
 }
 
 type SquareProps = {
@@ -209,18 +214,10 @@ function Board(props: BoardProps): JSX.Element {
     let newValidMoves: ValidMoves = validMoves;
 
     while (true) {
-      let botPassed = false;
-      // TODO: Pull most of this logic into a separate function that outputs numFlipped.
-      // Maybe just put it in botGo.
-      newValidMoves = getValidMoves(boardClone, Marker.BOT);
-      if (newValidMoves.size === 0) {
-        botPassed = true;
-      } else {
-        const botMove = botGo(newValidMoves);
-        const [botMoveX, botMoveY] = stringToCoord(botMove);
-        const flippedPosns: Coordinate[] = newValidMoves.get(botMove) || [];
-        takeMove(boardClone, Marker.BOT, [botMoveX, botMoveY], flippedPosns);
-        scoreDiff = flipped(scoreDiff, flippedPosns.length, false);
+      const numFlipped = botGo(boardClone);
+      const botPassed = numFlipped === 0;
+      if (numFlipped > 0) {
+        scoreDiff = flipped(scoreDiff, numFlipped, false);
       }
       newValidMoves = getValidMoves(boardClone, Marker.HUMAN);
       if (newValidMoves.size === 0) {
