@@ -165,12 +165,11 @@ interface BoardProps {
   isGameOver: boolean;
   gameIsOver: () => void;
   otherPlayersTurn: () => void;
-  currentScore: [number, number];
   updateScore: (score: [number, number]) => void;
 }
 
 function Board(props: BoardProps): JSX.Element {
-  const { boardWidth, boardHeight, isGameOver, gameIsOver, currentScore, updateScore } = props;
+  const { boardWidth, boardHeight, isGameOver, gameIsOver, updateScore } = props;
   const [boardArray, setBoardArray] = useState(createBoardArray(boardWidth, boardHeight, Marker.HUMAN));
   const [validMoves, setValidMoves] = useState(getValidMoves(boardArray, Marker.HUMAN));
 
@@ -192,11 +191,13 @@ function Board(props: BoardProps): JSX.Element {
     for (const [i, j] of validMoves.get(currentKey) || []) {
       boardArrayClone[j][i].marker = Marker.HUMAN;
     }
-    let newScore = flipped(currentScore, validMoves.get(currentKey)?.length || 0, true);
+    let scoreDiff = flipped([0, 0], validMoves.get(currentKey)?.length || 0, true);
     let newValidMoves: Map<string, [number, number][]> = validMoves;
 
     while (true) {
       let botPassed = false;
+      // TODO: Pull most of this logic into a separate function that outputs numFlipped.
+      // Maybe just put it in botGo.
       newValidMoves = getValidMoves(boardArrayClone, Marker.BOT);
       if (newValidMoves.size === 0) {
         botPassed = true;
@@ -207,7 +208,7 @@ function Board(props: BoardProps): JSX.Element {
         for (const [i, j] of newValidMoves.get(botMove) || []) {
           boardArrayClone[j][i].marker = Marker.BOT;
         }
-        newScore = flipped(newScore, newValidMoves.get(botMove)?.length || 0, false);
+        scoreDiff = flipped(scoreDiff, newValidMoves.get(botMove)?.length || 0, false);
       }
       newValidMoves = getValidMoves(boardArrayClone, Marker.HUMAN);
       if (newValidMoves.size === 0) {
@@ -231,7 +232,7 @@ function Board(props: BoardProps): JSX.Element {
     // Persist the board changes, the new set of valid moves, and the new score.
     setBoardArray(boardArrayClone);
     setValidMoves(newValidMoves);
-    updateScore(newScore);
+    updateScore(scoreDiff);
   };
 
   const handleHover = (x: number, y: number, isEnter: boolean) => {
@@ -277,6 +278,13 @@ function Game(): JSX.Element {
   const [isGameOver, setIsGameOver] = useState(false);
   const [score, setScore] = useState<[number, number]>([2, 2]);
 
+  function updateScore(diff: [number, number]): void {
+    const newScore = score.slice();
+    newScore[0] += diff[0];
+    newScore[1] += diff[1];
+    setScore(newScore);
+  }
+
   return (
     <div className="game">
       <div className="status">{isGameOver ? 'Game over.\n' : `Next player: ${markerToStr(nextPlayer)}\n`}</div>
@@ -291,8 +299,7 @@ function Game(): JSX.Element {
           isGameOver={isGameOver}
           gameIsOver={() => setIsGameOver(true)}
           otherPlayersTurn={() => setIsHumanNext(!isHumanNext)}
-          currentScore={score}
-          updateScore={setScore}
+          updateScore={updateScore}
         />
       </div>
     </div>
