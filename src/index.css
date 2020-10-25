@@ -2,26 +2,28 @@ table {
   border-collapse: collapse;
 }
 
-table, th, td {
+table,
+th,
+td {
   border: 1px solid black;
   text-align: center;
   font-size: 1.2em;
 }
 
-.valid-human-move {
-  background-color: #ff4c4c;
-}
-
-.would-be-flipped-human {
-  background-color: #ffb3b3;
-}
-
-.valid-bot-move {
+.just-placed {
   background-color: #4ca9ff;
 }
 
-.would-be-flipped-bot {
+.just-flipped {
   background-color: #b3daff;
+}
+
+.valid-move {
+  background-color: #ff4c4c;
+}
+
+.would-be-flipped {
+  background-color: #ffb3b3;
 }
 
 td {

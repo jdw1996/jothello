@@ -11,6 +11,8 @@ type SquareContent = {
   marker: Marker;
   isValidMove: boolean;
   wouldBeFlipped: boolean;
+  justPlaced: boolean;
+  justFlipped: boolean;
 };
 type BoardArray = SquareContent[][];
 type Score = [number, number];
@@ -50,6 +52,8 @@ function createBoardArray(width: number, height: number, nextPlayer: Marker): Bo
         marker: Marker.FREE,
         isValidMove: false,
         wouldBeFlipped: false,
+        justPlaced: false,
+        justFlipped: false,
       });
     }
     ret.push(row);
@@ -154,6 +158,10 @@ function botGo(board: BoardArray): number {
   const [x, y] = stringToCoord(move);
   const flippedPosns: Coordinate[] = validMoves.get(move) || [];
   takeMove(board, Marker.BOT, [x, y], flippedPosns);
+  board[y][x].justPlaced = true;
+  for (const [i, j] of flippedPosns) {
+    board[j][i].justFlipped = true;
+  }
   return flippedPosns.length;
 }
 
@@ -168,10 +176,16 @@ function Square(props: SquareProps): JSX.Element {
   const { value, onClick, handleMouseEnter, handleMouseLeave } = props;
   let cssClasses = 'square';
   if (value.isValidMove) {
-    cssClasses += ' valid-human-move';
+    cssClasses += ' valid-move';
   }
   if (value.wouldBeFlipped) {
-    cssClasses += ' would-be-flipped-human';
+    cssClasses += ' would-be-flipped';
+  }
+  if (value.justPlaced) {
+    cssClasses += ' just-placed';
+  }
+  if (value.justFlipped) {
+    cssClasses += ' just-flipped';
   }
   return (
     <td className={cssClasses} onClick={onClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
@@ -211,6 +225,12 @@ function Board(props: BoardProps): JSX.Element {
     const boardClone = board.slice();
     takeMove(boardClone, Marker.HUMAN, [x, y], validMoves.get(currentKey) || []);
     let scoreDiff = flipped([0, 0], validMoves.get(currentKey)?.length || 0, true);
+
+    // Clear data about what the bot did previously.
+    modifySquareContents(boardClone, (target) => {
+      target.justPlaced = false;
+      target.justFlipped = false;
+    });
 
     let newValidMoves: ValidMoves = validMoves;
     let botPassed = false;
