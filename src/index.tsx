@@ -213,24 +213,18 @@ function Board(props: BoardProps): JSX.Element {
     let scoreDiff = flipped([0, 0], validMoves.get(currentKey)?.length || 0, true);
     let newValidMoves: ValidMoves = validMoves;
 
-    while (true) {
+    let botPassed = false;
+    do {
       const numFlipped = botGo(boardClone);
-      const botPassed = numFlipped === 0;
+      botPassed = numFlipped === 0;
       if (numFlipped > 0) {
         scoreDiff = flipped(scoreDiff, numFlipped, false);
       }
       newValidMoves = getValidMoves(boardClone, Marker.HUMAN);
-      if (newValidMoves.size === 0) {
-        if (botPassed) {
-          gameIsOver();
-          break;
-        } else {
-          continue;
-        }
-      } else {
-        break;
+      if (newValidMoves.size === 0 && botPassed) {
+        gameIsOver();
       }
-    }
+    } while (newValidMoves.size === 0 && !botPassed);
 
     // Reset the valid moves marked on the board.
     modifySquareContents(boardClone, (target, x, y) => {
