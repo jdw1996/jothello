@@ -1,22 +1,22 @@
 {
   "files": {
     "main.css": "/jothello/static/css/main.c258aabf.chunk.css",
-    "main.js": "/jothello/static/js/main.07b556f2.chunk.js",
-    "main.js.map": "/jothello/static/js/main.07b556f2.chunk.js.map",
+    "main.js": "/jothello/static/js/main.a9e8f22a.chunk.js",
+    "main.js.map": "/jothello/static/js/main.a9e8f22a.chunk.js.map",
     "runtime-main.js": "/jothello/static/js/runtime-main.6151fe91.js",
     "runtime-main.js.map": "/jothello/static/js/runtime-main.6151fe91.js.map",
-    "static/js/2.528eaa57.chunk.js": "/jothello/static/js/2.528eaa57.chunk.js",
-    "static/js/2.528eaa57.chunk.js.map": "/jothello/static/js/2.528eaa57.chunk.js.map",
+    "static/js/2.9c6c4f59.chunk.js": "/jothello/static/js/2.9c6c4f59.chunk.js",
+    "static/js/2.9c6c4f59.chunk.js.map": "/jothello/static/js/2.9c6c4f59.chunk.js.map",
     "index.html": "/jothello/index.html",
-    "precache-manifest.f10d23da3ccaa203b93d1e864fcb489d.js": "/jothello/precache-manifest.f10d23da3ccaa203b93d1e864fcb489d.js",
+    "precache-manifest.372b0d64f9b132e92dc48f57cac28b75.js": "/jothello/precache-manifest.372b0d64f9b132e92dc48f57cac28b75.js",
     "service-worker.js": "/jothello/service-worker.js",
     "static/css/main.c258aabf.chunk.css.map": "/jothello/static/css/main.c258aabf.chunk.css.map",
-    "static/js/2.528eaa57.chunk.js.LICENSE.txt": "/jothello/static/js/2.528eaa57.chunk.js.LICENSE.txt"
+    "static/js/2.9c6c4f59.chunk.js.LICENSE.txt": "/jothello/static/js/2.9c6c4f59.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
     "static/js/runtime-main.6151fe91.js",
-    "static/js/2.528eaa57.chunk.js",
+    "static/js/2.9c6c4f59.chunk.js",
     "static/css/main.c258aabf.chunk.css",
-    "static/js/main.07b556f2.chunk.js"
+    "static/js/main.a9e8f22a.chunk.js"
   ]
 }
