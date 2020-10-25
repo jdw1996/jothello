@@ -148,20 +148,27 @@ function takeMove(board: BoardArray, player: Marker, position: Coordinate, toFli
 }
 
 function botGo(board: BoardArray): number {
+  // Get the list of possible moves. If none, return.
   const validMoves = getValidMoves(board, Marker.BOT);
   if (validMoves.size === 0) return 0;
+
+  // Pick a move from the list.
   let move = '';
   for (const [key] of validMoves) {
     move = key;
     break;
   }
   const [x, y] = stringToCoord(move);
+
+  // Modify the board to reflect the chosen move.
   const flippedPosns: Coordinate[] = validMoves.get(move) || [];
   takeMove(board, Marker.BOT, [x, y], flippedPosns);
   board[y][x].justPlaced = true;
   for (const [i, j] of flippedPosns) {
     board[j][i].justFlipped = true;
   }
+
+  // Return the number of pieces flipped.
   return flippedPosns.length;
 }
 
