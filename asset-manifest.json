@@ -1,22 +1,22 @@
 {
   "files": {
-    "main.css": "/jothello/static/css/main.c258aabf.chunk.css",
-    "main.js": "/jothello/static/js/main.6c16093a.chunk.js",
-    "main.js.map": "/jothello/static/js/main.6c16093a.chunk.js.map",
+    "main.css": "/jothello/static/css/main.a474d93a.chunk.css",
+    "main.js": "/jothello/static/js/main.ab5de28b.chunk.js",
+    "main.js.map": "/jothello/static/js/main.ab5de28b.chunk.js.map",
     "runtime-main.js": "/jothello/static/js/runtime-main.6151fe91.js",
     "runtime-main.js.map": "/jothello/static/js/runtime-main.6151fe91.js.map",
     "static/js/2.9c6c4f59.chunk.js": "/jothello/static/js/2.9c6c4f59.chunk.js",
     "static/js/2.9c6c4f59.chunk.js.map": "/jothello/static/js/2.9c6c4f59.chunk.js.map",
     "index.html": "/jothello/index.html",
-    "precache-manifest.e22870ea913fe9f000c6a19678070486.js": "/jothello/precache-manifest.e22870ea913fe9f000c6a19678070486.js",
+    "precache-manifest.632e21c8beef92d73344fb36207f101b.js": "/jothello/precache-manifest.632e21c8beef92d73344fb36207f101b.js",
     "service-worker.js": "/jothello/service-worker.js",
-    "static/css/main.c258aabf.chunk.css.map": "/jothello/static/css/main.c258aabf.chunk.css.map",
+    "static/css/main.a474d93a.chunk.css.map": "/jothello/static/css/main.a474d93a.chunk.css.map",
     "static/js/2.9c6c4f59.chunk.js.LICENSE.txt": "/jothello/static/js/2.9c6c4f59.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
     "static/js/runtime-main.6151fe91.js",
     "static/js/2.9c6c4f59.chunk.js",
-    "static/css/main.c258aabf.chunk.css",
-    "static/js/main.6c16093a.chunk.js"
+    "static/css/main.a474d93a.chunk.css",
+    "static/js/main.ab5de28b.chunk.js"
   ]
 }
