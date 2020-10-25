@@ -211,19 +211,25 @@ function Board(props: BoardProps): JSX.Element {
     const boardClone = board.slice();
     takeMove(boardClone, Marker.HUMAN, [x, y], validMoves.get(currentKey) || []);
     let scoreDiff = flipped([0, 0], validMoves.get(currentKey)?.length || 0, true);
-    let newValidMoves: ValidMoves = validMoves;
 
+    let newValidMoves: ValidMoves = validMoves;
     let botPassed = false;
     do {
+      // Let the bot take its turn.
       const numFlipped = botGo(boardClone);
       botPassed = numFlipped === 0;
       if (numFlipped > 0) {
         scoreDiff = flipped(scoreDiff, numFlipped, false);
       }
+
+      // Determine whether there are any valid moves for humans; if there
+      // aren't and the bot passed, then the game is over.
       newValidMoves = getValidMoves(boardClone, Marker.HUMAN);
       if (newValidMoves.size === 0 && botPassed) {
         gameIsOver();
       }
+
+      // If the bot went and the human cannot go, the bot can go again.
     } while (newValidMoves.size === 0 && !botPassed);
 
     // Reset the valid moves marked on the board.
