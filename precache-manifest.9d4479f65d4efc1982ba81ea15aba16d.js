@@ -1,6 +1,6 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "8f1cb253d340e57fa03f7510e80f3b16",
+    "revision": "5276a1b357734060292a2f6574d845d4",
     "url": "/jothello/index.html"
   },
   {
