@@ -23,6 +23,7 @@ type SquareContent = {
   marker: Marker;
   isValidMove: boolean;
   wouldBeFlipped: boolean;
+  noLongerWouldBeFlipped: boolean;
   justPlaced: boolean;
   justFlipped: boolean;
 };
@@ -45,6 +46,10 @@ function getMarker(isHuman: boolean): Marker {
   return isHuman ? Marker.HUMAN : Marker.BOT;
 }
 
+function otherMarker(marker: Marker): Marker {
+  return getMarker(marker !== Marker.HUMAN);
+}
+
 function coordToString(coord: Coordinate): string {
   return `${coord[0]},${coord[1]}`;
 }
@@ -64,6 +69,7 @@ function createBoardArray(width: number, height: number, nextPlayer: Marker): Bo
         marker: Marker.FREE,
         isValidMove: false,
         wouldBeFlipped: false,
+        noLongerWouldBeFlipped: false,
         justPlaced: false,
         justFlipped: false,
       });
@@ -262,6 +268,9 @@ function Square(props: SquareProps): JSX.Element {
   if (value.wouldBeFlipped) {
     cssClasses += ' would-be-flipped';
   }
+  if (value.noLongerWouldBeFlipped) {
+    cssClasses += ' no-longer-would-be-flipped';
+  }
   if (value.justPlaced) {
     cssClasses += ' just-placed';
   }
@@ -270,7 +279,10 @@ function Square(props: SquareProps): JSX.Element {
   }
   return (
     <td className={cssClasses} onClick={onClick} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-      {markerToStr(value.marker)}
+      <div className="square-container">
+        <div className="square-front">{markerToStr(value.marker)}</div>
+        <div className="square-back">{markerToStr(otherMarker(value.marker))}</div>
+      </div>
     </td>
   );
 }
@@ -311,6 +323,7 @@ function Board(props: BoardProps): JSX.Element {
     modifySquareContents(boardClone, (target) => {
       target.justPlaced = false;
       target.justFlipped = false;
+      target.noLongerWouldBeFlipped = false;
     });
 
     let newValidMoves: ValidMoves = validMoves;
@@ -351,8 +364,17 @@ function Board(props: BoardProps): JSX.Element {
       return;
     }
     const boardClone = board.slice();
+    const changeToApply = isEnter
+      ? (sc: SquareContent) => {
+          sc.wouldBeFlipped = true;
+          sc.noLongerWouldBeFlipped = false;
+        }
+      : (sc: SquareContent) => {
+          sc.wouldBeFlipped = false;
+          sc.noLongerWouldBeFlipped = true;
+        };
     for (const [i, j] of validMoves.get(currentKey) || []) {
-      boardClone[j][i].wouldBeFlipped = isEnter;
+      changeToApply(boardClone[j][i]);
     }
     setBoard(boardClone);
   };
