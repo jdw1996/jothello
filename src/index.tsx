@@ -298,36 +298,15 @@ type BoardProps = {
 };
 
 function Board(props: BoardProps): JSX.Element {
-  const { boardWidth, boardHeight, isGameOver, gameIsOver, updateScore } = props;
+  const { boardWidth, boardHeight, nextPlayer, isGameOver, gameIsOver, otherPlayersTurn, updateScore } = props;
   const [board, setBoard] = useState(createBoardArray(boardWidth, boardHeight, Marker.HUMAN));
   const [validMoves, setValidMoves] = useState(getValidMoves(board, Marker.HUMAN));
 
-  const handleBoardClick = (x: number, y: number) => {
-    // If the game is over, no more moves can be made.
-    if (isGameOver) {
-      return;
-    }
-
-    // If the clicked square is an invalid move, we do nothing.
-    const currentKey = coordToString([x, y]);
-    if (!validMoves.has(currentKey)) {
-      return;
-    }
-
-    // Since the move is valid, we save it and flip the appropriate pieces.
+  const takeBotTurn = () => {
     const boardClone = board.slice();
-    takeMove(boardClone, Marker.HUMAN, [x, y], validMoves.get(currentKey) || []);
-    let scoreDiff = flipped([0, 0], validMoves.get(currentKey)?.length || 0, true);
-
-    // Clear data about what the bot did previously.
-    modifySquareContents(boardClone, (target) => {
-      target.justPlaced = false;
-      target.justFlipped = false;
-      target.noLongerWouldBeFlipped = false;
-    });
-
     let newValidMoves: ValidMoves = validMoves;
     let botPassed = false;
+    let scoreDiff: [number, number] = [0, 0];
     do {
       // Let the bot take its turn.
       const numFlipped = botGo(boardClone);
@@ -346,15 +325,53 @@ function Board(props: BoardProps): JSX.Element {
       // If the bot went and the human cannot go, the bot can go again.
     } while (newValidMoves.size === 0 && !botPassed);
 
-    // Reset the valid moves marked on the board.
+    // Mark valid moves on the board.
     modifySquareContents(boardClone, (target, x, y) => {
       target.isValidMove = newValidMoves.has(coordToString([x, y]));
       target.wouldBeFlipped = false;
     });
 
-    // Persist the board changes, the new set of valid moves, and the new score.
+    // End turn and persist board changes, new set of valid moves, and new score.
+    otherPlayersTurn();
+    updateScore(scoreDiff);
     setBoard(boardClone);
     setValidMoves(newValidMoves);
+  };
+
+  if (nextPlayer === Marker.BOT) {
+    setTimeout(takeBotTurn, 500);
+  }
+
+  const handleBoardClick = (x: number, y: number) => {
+    // If the game is over, no more moves can be made.
+    if (isGameOver) {
+      return;
+    }
+
+    // If the clicked square is an invalid move, we do nothing.
+    const currentKey = coordToString([x, y]);
+    if (!validMoves.has(currentKey)) {
+      return;
+    }
+
+    // Since the move is valid, we save it and flip the appropriate pieces.
+    const boardClone = board.slice();
+    takeMove(boardClone, Marker.HUMAN, [x, y], validMoves.get(currentKey) || []);
+    const scoreDiff = flipped([0, 0], validMoves.get(currentKey)?.length || 0, true);
+
+    // Clear data about what happened previously.
+    modifySquareContents(boardClone, (target) => {
+      target.isValidMove = false;
+      target.wouldBeFlipped = false;
+      target.justPlaced = false;
+      target.justFlipped = false;
+      target.noLongerWouldBeFlipped = false;
+    });
+
+    // End turn and persist board changes, new set of valid moves, and new score.
+    otherPlayersTurn();
+    setBoard(boardClone);
+    setValidMoves(new Map<string, Coordinate[]>());
     updateScore(scoreDiff);
   };
 
