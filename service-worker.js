@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/jothello/precache-manifest.328f6eb93d42ffc187325d3818cef969.js"
+  "/jothello/precache-manifest.bdc9e8016cc5eff5f52a44efbefc25e0.js"
 );
 
 self.addEventListener('message', (event) => {
