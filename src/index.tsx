@@ -101,7 +101,9 @@ function isCornerAdjacent([x, y]: Coordinate, boardWidth: number, boardHeight: n
 
 function isEdge([x, y]: Coordinate, boardWidth: number, boardHeight: number): boolean {
   return (
-    !isCorner([x, y], boardHeight, boardWidth) && (x === 0 || x === boardWidth - 1 || y === 0 || y === boardHeight - 1)
+    !isCorner([x, y], boardHeight, boardWidth) &&
+    !isCornerAdjacent([x, y], boardHeight, boardWidth) &&
+    (x === 0 || x === boardWidth - 1 || y === 0 || y === boardHeight - 1)
   );
 }
 
@@ -110,6 +112,10 @@ function isEdgeAdjacent([x, y]: Coordinate, boardWidth: number, boardHeight: num
     !isCornerAdjacent([x, y], boardHeight, boardWidth) &&
     (x === 1 || x === boardWidth - 2 || y === 1 || y === boardHeight - 2)
   );
+}
+
+function isInterior(...args: [Coordinate, number, number]): boolean {
+  return !isCorner(...args) && !isCornerAdjacent(...args) && !isEdge(...args) && !isEdgeAdjacent(...args);
 }
 
 function modifySquareContents(board: BoardArray, modifier: (target: SquareContent, i: number, j: number) => void) {
@@ -195,48 +201,35 @@ function botGo(board: BoardArray): number {
 
   // Sort the moves based on their position on the board.
   let move = '';
+  const longestValueComparator = (_k1: string, v1: Coordinate[], _k2: string, v2: Coordinate[]) =>
+    v2.length - v1.length;
+  const shortestValueComparator = (_k1: string, v1: Coordinate[], _k2: string, v2: Coordinate[]) =>
+    v1.length - v2.length;
+  const positionCheckers = [isCorner, isEdge, isInterior, isEdgeAdjacent, isCornerAdjacent];
+  const positionComparators = [
+    longestValueComparator,
+    longestValueComparator,
+    shortestValueComparator,
+    shortestValueComparator,
+    shortestValueComparator,
+  ];
+  const positionMaps = Array(positionCheckers.length)
+    .fill(0)
+    .map(() => new Map<string, Coordinate[]>());
   const boardHeight = board.length;
   const boardWidth = board[0].length;
-  const corners = new Map<string, Coordinate[]>();
-  const cornerAdjacent = new Map<string, Coordinate[]>();
-  const edges = new Map<string, Coordinate[]>();
-  const edgeAdjacent = new Map<string, Coordinate[]>();
-  const interior = new Map<string, Coordinate[]>();
   for (const [key] of validMoves) {
-    const checkingArgs: [Coordinate, number, number] = [stringToCoord(key), boardWidth, boardHeight];
-    const settingArgs: [string, Coordinate[]] = [key, validMoves.get(key) || []];
-    if (isCorner(...checkingArgs)) {
-      corners.set(...settingArgs);
-    } else if (isCornerAdjacent(...checkingArgs)) {
-      cornerAdjacent.set(...settingArgs);
-    } else if (isEdge(...checkingArgs)) {
-      edges.set(...settingArgs);
-    } else if (isEdgeAdjacent(...checkingArgs)) {
-      edgeAdjacent.set(...settingArgs);
-    } else {
-      interior.set(...settingArgs);
+    for (let i = 0; i < positionCheckers.length; ++i) {
+      if (positionCheckers[i](stringToCoord(key), boardWidth, boardHeight)) {
+        positionMaps[i].set(key, validMoves.get(key) || []);
+      }
     }
   }
-  if (corners.size > 0) {
-    // If any corner moves are available, choose the one that flips the most
-    // pieces.
-    move = getMapMax(corners, (_k1, v1, _k2, v2) => v2.length - v1.length) || move;
-  } else if (edges.size > 0) {
-    // If any edge moves are available, choose the one that flips the most
-    // pieces.
-    move = getMapMax(edges, (_k1, v1, _k2, v2) => v2.length - v1.length) || move;
-  } else if (interior.size > 0) {
-    // If any interior moves are available, choose the one that flips the fewest
-    // pieces.
-    move = getMapMax(interior, (_k1, v1, _k2, v2) => v1.length - v2.length) || move;
-  } else if (edgeAdjacent.size > 0) {
-    // If any edge-adjacent moves are available, choose the one that flips the
-    // fewest pieces.
-    move = getMapMax(edgeAdjacent, (_k1, v1, _k2, v2) => v1.length - v2.length) || move;
-  } else {
-    // If only corner-adjacent moves are available, choose the one that flips
-    // the fewest pieces.
-    move = getMapMax(cornerAdjacent, (_k1, v1, _k2, v2) => v1.length - v2.length) || move;
+  for (let i = 0; i < positionCheckers.length; ++i) {
+    if (positionMaps[i].size > 0) {
+      move = getMapMax(positionMaps[i], positionComparators[i]) || move;
+      if (move) break;
+    }
   }
   const [x, y] = stringToCoord(move);
 
