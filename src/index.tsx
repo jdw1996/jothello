@@ -329,7 +329,6 @@ function Board(props: BoardProps): JSX.Element {
       // Mark valid moves on the board.
       modifySquareContents(boardClone, (target, x, y) => {
         target.isValidMove = newValidMoves.has(coordToString([x, y]));
-        target.wouldBeFlipped = false;
       });
 
       // End turn and persist board changes, new set of valid moves, and new score.
