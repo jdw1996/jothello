@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
@@ -307,42 +307,43 @@ function Board(props: BoardProps): JSX.Element {
   const [board, setBoard] = useState(createBoardArray(boardWidth, boardHeight, Marker.HUMAN));
   const [validMoves, setValidMoves] = useState(getValidMoves(board, Marker.HUMAN));
 
-  if (nextPlayer === Marker.BOT && !isGameOver) {
+  useEffect(() => {
+    if (nextPlayer !== Marker.BOT || isGameOver) return;
+    const boardClone = cloneBoardArray(board);
+    let newValidMoves: ValidMoves = new Map<string, Coordinate[]>();
+    let botPassed = false;
+    let scoreDiff: [number, number] = [0, 0];
+    do {
+      // Let the bot take its turn.
+      const numFlipped = botGo(boardClone);
+      botPassed = numFlipped === 0;
+      if (numFlipped > 0) {
+        scoreDiff = flipped(scoreDiff, numFlipped, false);
+      }
+
+      // Determine whether there are any valid moves for humans; if there
+      // aren't and the bot passed, then the game is over.
+      newValidMoves = getValidMoves(boardClone, Marker.HUMAN);
+      if (newValidMoves.size === 0 && botPassed) {
+        gameIsOver();
+      }
+
+      // If the bot went and the human cannot go, the bot can go again.
+    } while (newValidMoves.size === 0 && !botPassed);
+
+    // Mark valid moves on the board.
+    modifySquareContents(boardClone, (target, x, y) => {
+      target.isValidMove = newValidMoves.has(coordToString([x, y]));
+    });
+
+    // End turn and persist board changes, new set of valid moves, and new score.
     setTimeout(() => {
-      const boardClone = cloneBoardArray(board);
-      let newValidMoves: ValidMoves = new Map<string, Coordinate[]>();
-      let botPassed = false;
-      let scoreDiff: [number, number] = [0, 0];
-      do {
-        // Let the bot take its turn.
-        const numFlipped = botGo(boardClone);
-        botPassed = numFlipped === 0;
-        if (numFlipped > 0) {
-          scoreDiff = flipped(scoreDiff, numFlipped, false);
-        }
-
-        // Determine whether there are any valid moves for humans; if there
-        // aren't and the bot passed, then the game is over.
-        newValidMoves = getValidMoves(boardClone, Marker.HUMAN);
-        if (newValidMoves.size === 0 && botPassed) {
-          gameIsOver();
-        }
-
-        // If the bot went and the human cannot go, the bot can go again.
-      } while (newValidMoves.size === 0 && !botPassed);
-
-      // Mark valid moves on the board.
-      modifySquareContents(boardClone, (target, x, y) => {
-        target.isValidMove = newValidMoves.has(coordToString([x, y]));
-      });
-
-      // End turn and persist board changes, new set of valid moves, and new score.
       otherPlayersTurn();
       setBoard(boardClone);
       setValidMoves(newValidMoves);
       updateScore(scoreDiff);
     }, 500);
-  }
+  }, [nextPlayer]);
 
   const handleBoardClick = (x: number, y: number) => {
     // If the game is over, no more moves can be made.
