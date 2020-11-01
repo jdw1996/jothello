@@ -130,7 +130,7 @@ function isInterior(...args: [Coordinate, number, number]): boolean {
   return !isCorner(...args) && !isCornerAdjacent(...args) && !isEdge(...args) && !isEdgeAdjacent(...args);
 }
 
-function modifySquareContents(board: BoardArray, modifier: (target: SquareContent, i: number, j: number) => void) {
+function loopOverBoard(board: BoardArray, modifier: (target: SquareContent, i: number, j: number) => void) {
   for (let j = 0; j < board.length; ++j) {
     for (let i = 0; i < board[j].length; ++i) {
       modifier(board[j][i], i, j);
@@ -178,7 +178,7 @@ function flippablePositions(board: BoardArray, x: number, y: number, player: Mar
 
 function getValidMoves(board: BoardArray, nextPlayer: Marker): ValidMoves {
   const validMoves: ValidMoves = new Map<string, Coordinate[]>();
-  modifySquareContents(board, (_target, x, y) => {
+  loopOverBoard(board, (_target, x, y) => {
     const flippable = flippablePositions(board, x, y, nextPlayer);
     if (flippable.length > 0) {
       validMoves.set(coordToString([x, y]), flippable);
@@ -332,7 +332,7 @@ function Board(props: BoardProps): JSX.Element {
     } while (newValidMoves.size === 0 && !botPassed);
 
     // Mark valid moves on the board.
-    modifySquareContents(boardClone, (target, x, y) => {
+    loopOverBoard(boardClone, (target, x, y) => {
       target.isValidMove = newValidMoves.has(coordToString([x, y]));
     });
 
@@ -363,7 +363,7 @@ function Board(props: BoardProps): JSX.Element {
     const scoreDiff = flipped([0, 0], validMoves.get(currentKey)?.length || 0, true);
 
     // Clear data about what happened previously.
-    modifySquareContents(boardClone, (target) => {
+    loopOverBoard(boardClone, (target) => {
       target.isValidMove = false;
       target.wouldBeFlipped = false;
       target.justPlaced = false;
