@@ -101,6 +101,44 @@ function cloneBoardArray(board: BoardArray): BoardArray {
   return ret;
 }
 
+class MoveRegion {
+  private categorizer: ([x, y]: Coordinate, boardWidth: number, boardHeight: number) => boolean;
+  private comparator: (key1: string, val1: Coordinate[], key2: string, val2: Coordinate[]) => number;
+  private boardWidth: number;
+  private boardHeight: number;
+  private moves: ValidMoves;
+
+  constructor(
+    categorizer: ([x, y]: Coordinate, boardWidth: number, boardHeight: number) => boolean,
+    comparator: (key1: string, val1: Coordinate[], key2: string, val2: Coordinate[]) => number,
+    boardWidth: number,
+    boardHeight: number,
+  ) {
+    this.categorizer = categorizer;
+    this.comparator = comparator;
+    this.boardWidth = boardWidth;
+    this.boardHeight = boardHeight;
+    this.moves = new Map<string, Coordinate[]>();
+  }
+
+  tryAddMove(move: string, wouldFlip: Coordinate[]): boolean {
+    if (this.categorizer(stringToCoord(move), this.boardWidth, this.boardHeight) && wouldFlip.length > 0) {
+      this.moves.set(move, wouldFlip);
+      return true;
+    }
+    return false;
+  }
+
+  getBestMove(): [string, Coordinate[]] {
+    const bestMove = getMapMax(this.moves, this.comparator) || '';
+    return [bestMove, this.moves.get(bestMove) || []];
+  }
+
+  hasMoves(): boolean {
+    return this.moves.size > 0;
+  }
+}
+
 function isCorner([x, y]: Coordinate, boardWidth: number, boardHeight: number): boolean {
   return (x === 0 || x === boardWidth - 1) && (y === 0 || y === boardHeight - 1);
 }
@@ -212,41 +250,42 @@ function botGo(board: BoardArray): number {
   if (validMoves.size === 0) return 0;
 
   // Sort the moves based on their position on the board.
-  let move = '';
+  const boardHeight = board.length;
+  const boardWidth = board[0].length;
   const longestValueComparator = (_k1: string, v1: Coordinate[], _k2: string, v2: Coordinate[]) =>
     v2.length - v1.length;
   const shortestValueComparator = (_k1: string, v1: Coordinate[], _k2: string, v2: Coordinate[]) =>
     v1.length - v2.length;
-  const positionCheckers = [isCorner, isEdge, isInterior, isEdgeAdjacent, isCornerAdjacent];
-  const positionComparators = [
-    longestValueComparator,
-    longestValueComparator,
-    shortestValueComparator,
-    shortestValueComparator,
-    shortestValueComparator,
+  const moveRegions: MoveRegion[] = [
+    new MoveRegion(isCorner, longestValueComparator, boardWidth, boardHeight),
+    new MoveRegion(isEdge, longestValueComparator, boardWidth, boardHeight),
+    new MoveRegion(isInterior, shortestValueComparator, boardWidth, boardHeight),
+    new MoveRegion(isEdgeAdjacent, shortestValueComparator, boardWidth, boardHeight),
+    new MoveRegion(isCornerAdjacent, shortestValueComparator, boardWidth, boardHeight),
   ];
-  const positionMaps = Array(positionCheckers.length)
-    .fill(0)
-    .map(() => new Map<string, Coordinate[]>());
-  const boardHeight = board.length;
-  const boardWidth = board[0].length;
+
+  let move = '';
+  let flippedPosns: Coordinate[] = [];
   for (const [key] of validMoves) {
-    for (let i = 0; i < positionCheckers.length; ++i) {
-      if (positionCheckers[i](stringToCoord(key), boardWidth, boardHeight)) {
-        positionMaps[i].set(key, validMoves.get(key) || []);
+    for (let i = 0; i < moveRegions.length; ++i) {
+      if (moveRegions[i].tryAddMove(key, validMoves.get(key) || [])) {
+        break;
       }
     }
   }
-  for (let i = 0; i < positionCheckers.length; ++i) {
-    if (positionMaps[i].size > 0) {
-      move = getMapMax(positionMaps[i], positionComparators[i]) || move;
-      if (move) break;
+  for (let i = 0; i < moveRegions.length; ++i) {
+    if (moveRegions[i].hasMoves()) {
+      const bestMove = moveRegions[i].getBestMove();
+      move = bestMove[0];
+      flippedPosns = bestMove[1];
+      if (move) {
+        break;
+      }
     }
   }
   const [x, y] = stringToCoord(move);
 
   // Modify the board to reflect the chosen move.
-  const flippedPosns: Coordinate[] = validMoves.get(move) || [];
   takeMove(board, Marker.BOT, [x, y], flippedPosns);
   board[y][x].justPlaced = true;
   for (const [i, j] of flippedPosns) {
