@@ -89,6 +89,18 @@ function createBoardArray(width: number, height: number, nextPlayer: Marker): Bo
   return ret;
 }
 
+function cloneBoardArray(board: BoardArray): BoardArray {
+  const ret: BoardArray = [];
+  for (const row of board) {
+    const newRow: SquareContent[] = [];
+    for (const sc of row) {
+      newRow.push({ ...sc });
+    }
+    ret.push(newRow);
+  }
+  return ret;
+}
+
 function isCorner([x, y]: Coordinate, boardWidth: number, boardHeight: number): boolean {
   return (x === 0 || x === boardWidth - 1) && (y === 0 || y === boardHeight - 1);
 }
@@ -297,7 +309,7 @@ function Board(props: BoardProps): JSX.Element {
 
   if (nextPlayer === Marker.BOT && !isGameOver) {
     setTimeout(() => {
-      const boardClone = board.slice();
+      const boardClone = cloneBoardArray(board);
       let newValidMoves: ValidMoves = new Map<string, Coordinate[]>();
       let botPassed = false;
       let scoreDiff: [number, number] = [0, 0];
@@ -345,7 +357,7 @@ function Board(props: BoardProps): JSX.Element {
     }
 
     // Since the move is valid, we save it and flip the appropriate pieces.
-    const boardClone = board.slice();
+    const boardClone = cloneBoardArray(board);
     takeMove(boardClone, Marker.HUMAN, [x, y], validMoves.get(currentKey) || []);
     const scoreDiff = flipped([0, 0], validMoves.get(currentKey)?.length || 0, true);
 
@@ -370,7 +382,6 @@ function Board(props: BoardProps): JSX.Element {
     if (!validMoves.has(currentKey)) {
       return;
     }
-    const boardClone = board.slice();
     const changeToApply = isEnter
       ? (sc: SquareContent) => {
           sc.wouldBeFlipped = true;
@@ -380,10 +391,13 @@ function Board(props: BoardProps): JSX.Element {
           sc.wouldBeFlipped = false;
           sc.noLongerWouldBeFlipped = true;
         };
-    for (const [i, j] of validMoves.get(currentKey) || []) {
-      changeToApply(boardClone[j][i]);
-    }
-    setBoard(boardClone);
+    setBoard((b) => {
+      const bClone = cloneBoardArray(b);
+      for (const [i, j] of validMoves.get(currentKey) || []) {
+        changeToApply(bClone[j][i]);
+      }
+      return bClone;
+    });
   };
 
   return (
