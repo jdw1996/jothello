@@ -376,12 +376,15 @@ function Board(props: BoardProps): JSX.Element {
     });
 
     // End turn and persist board changes, new set of valid moves, and new score.
-    setTimeout(() => {
-      otherPlayersTurn();
-      setBoard(boardClone);
-      setValidMoves(newValidMoves);
-      updateScore(scoreDiff);
-    }, 500);
+    setTimeout(
+      () => {
+        otherPlayersTurn();
+        setBoard(boardClone);
+        setValidMoves(newValidMoves);
+        updateScore(scoreDiff);
+      },
+      scoreDiff[0] === 0 && scoreDiff[1] === 0 ? 0 : 500,
+    );
   }, [nextPlayer]);
 
   const handleBoardClick = (x: number, y: number) => {
