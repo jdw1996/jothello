@@ -351,6 +351,7 @@ function Board(props: BoardProps): JSX.Element {
     const boardClone = cloneBoardArray(board);
     let newValidMoves: ValidMoves = new Map<string, Coordinate[]>();
     let botPassed = false;
+    let endGame = false;
     let scoreDiff: [number, number] = [0, 0];
     do {
       // Let the bot take its turn.
@@ -364,7 +365,7 @@ function Board(props: BoardProps): JSX.Element {
       // aren't and the bot passed, then the game is over.
       newValidMoves = getValidMoves(boardClone, Marker.HUMAN);
       if (newValidMoves.size === 0 && botPassed) {
-        gameIsOver();
+        endGame = true;
       }
 
       // If the bot went and the human cannot go, the bot can go again.
@@ -378,6 +379,7 @@ function Board(props: BoardProps): JSX.Element {
     // End turn and persist board changes, new set of valid moves, and new score.
     setTimeout(
       () => {
+        endGame && gameIsOver();
         otherPlayersTurn();
         setBoard(boardClone);
         setValidMoves(newValidMoves);
