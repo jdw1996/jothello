@@ -474,6 +474,7 @@ function Game(): JSX.Element {
   const nextPlayer = getMarker(isHumanNext);
   const [isGameOver, setIsGameOver] = useState(false);
   const [score, setScore] = useState<Score>([2, 2]);
+  const [boardKey, setBoardKey] = useState(0);
 
   function updateScore(diff: Score): void {
     setScore((s) => {
@@ -484,14 +485,30 @@ function Game(): JSX.Element {
     });
   }
 
+  function newGame(): void {
+    setIsHumanNext(true);
+    setIsGameOver(false);
+    setScore([2, 2]);
+    setBoardKey((n) => n + 1);
+  }
+
   return (
     <div className="game">
-      <div className="status">{isGameOver ? 'Game over.\n' : `Next player: ${markerToStr(nextPlayer)}\n`}</div>
-      <div className="score">{`The score is ${score[0]} for ${markerToStr(Marker.HUMAN)} and ${
+      <p className="status">
+        {isGameOver ? (
+          <>
+            Game over. <button onClick={newGame}>Reset</button>
+          </>
+        ) : (
+          `Next player: ${markerToStr(nextPlayer)}\n`
+        )}
+      </p>
+      <p className="score">{`The score is ${score[0]} for ${markerToStr(Marker.HUMAN)} and ${
         score[1]
-      } for ${markerToStr(Marker.BOT)}.`}</div>
+      } for ${markerToStr(Marker.BOT)}.`}</p>
       <div className="game-board">
         <Board
+          key={boardKey}
           boardWidth={BOARD_WIDTH}
           boardHeight={BOARD_HEIGHT}
           nextPlayer={nextPlayer}
