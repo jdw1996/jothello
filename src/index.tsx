@@ -477,10 +477,12 @@ function Game(): JSX.Element {
   const [score, setScore] = useState<Score>([2, 2]);
 
   function updateScore(diff: Score): void {
-    const newScore: Score = [...score];
-    newScore[0] += diff[0];
-    newScore[1] += diff[1];
-    setScore(newScore);
+    setScore((s) => {
+      const sClone: Score = [...s];
+      sClone[0] += diff[0];
+      sClone[1] += diff[1];
+      return sClone;
+    });
   }
 
   return (
