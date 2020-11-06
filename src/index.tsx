@@ -14,6 +14,10 @@ function getMapMax<K, V>(map: Map<K, V>, comparator: (key1: K, val1: V, key2: K,
   return bestKeyYet;
 }
 
+function sleep(ms: number): Promise<unknown> {
+  return new Promise((v) => setTimeout(v, ms));
+}
+
 enum Marker {
   HUMAN,
   BOT,
@@ -225,8 +229,8 @@ function getValidMoves(board: BoardArray, nextPlayer: Marker): ValidMoves {
   return validMoves;
 }
 
-function flipped(currentScore: Score, numFlipped: number, isHumanMove: boolean): Score {
-  const newScore: Score = [...currentScore];
+function flipped(numFlipped: number, isHumanMove: boolean): Score {
+  const newScore: Score = [0, 0];
   if (isHumanMove) {
     newScore[0] += 1 + numFlipped;
     newScore[1] -= numFlipped;
@@ -336,58 +340,53 @@ type BoardProps = {
   boardHeight: number;
   nextPlayer: Marker;
   isGameOver: boolean;
+  score: Score;
   gameIsOver: () => void;
   otherPlayersTurn: () => void;
   updateScore: (score: Score) => void;
 };
 
 function Board(props: BoardProps): JSX.Element {
-  const { boardWidth, boardHeight, nextPlayer, isGameOver, gameIsOver, otherPlayersTurn, updateScore } = props;
+  const { boardWidth, boardHeight, nextPlayer, isGameOver, score, gameIsOver, otherPlayersTurn, updateScore } = props;
   const [board, setBoard] = useState(createBoardArray(boardWidth, boardHeight, Marker.HUMAN));
   const [validMoves, setValidMoves] = useState(getValidMoves(board, Marker.HUMAN));
 
   useEffect(() => {
-    if (nextPlayer !== Marker.BOT || isGameOver) return;
-    const boardClone = cloneBoardArray(board);
-    let newValidMoves: ValidMoves = new Map<string, Coordinate[]>();
-    let botPassed = false;
-    let endGame = false;
-    let scoreDiff: [number, number] = [0, 0];
-    do {
+    const f = async () => {
+      // If it's the human's turn or the game is over, do nothing.
+      if (nextPlayer !== Marker.BOT || isGameOver) return;
+
+      const boardClone = cloneBoardArray(board);
+      let endGame = false;
+
       // Let the bot take its turn.
       const numFlipped = botGo(boardClone);
-      botPassed = numFlipped === 0;
-      if (numFlipped > 0) {
-        scoreDiff = flipped(scoreDiff, numFlipped, false);
-      }
+      const scoreDiff = flipped(numFlipped, false);
 
-      // Determine whether there are any valid moves for humans; if there
-      // aren't and the bot passed, then the game is over.
-      newValidMoves = getValidMoves(boardClone, Marker.HUMAN);
-      if (newValidMoves.size === 0 && botPassed) {
+      // If the bot made a move, wait before persisting changes.
+      await sleep(scoreDiff[0] === 0 && scoreDiff[1] === 0 ? 0 : 500);
+
+      // Find the possible moves for the human.
+      const newValidMoves = getValidMoves(boardClone, Marker.HUMAN);
+      if (newValidMoves.size > 0) {
+        // If the human can go, it is their turn.
+        otherPlayersTurn();
+        // Mark valid moves on the board.
+        loopOverBoard(boardClone, (target, x, y) => {
+          target.isValidMove = newValidMoves.has(coordToString([x, y]));
+        });
+      } else if (numFlipped === 0) {
+        // If the human can't go and the bot passed, the game is over.
         endGame = true;
       }
 
-      // If the bot went and the human cannot go, the bot can go again.
-    } while (newValidMoves.size === 0 && !botPassed);
-
-    // Mark valid moves on the board.
-    loopOverBoard(boardClone, (target, x, y) => {
-      target.isValidMove = newValidMoves.has(coordToString([x, y]));
-    });
-
-    // End turn and persist board changes, new set of valid moves, and new score.
-    setTimeout(
-      () => {
-        endGame && gameIsOver();
-        otherPlayersTurn();
-        setBoard(boardClone);
-        setValidMoves(newValidMoves);
-        updateScore(scoreDiff);
-      },
-      scoreDiff[0] === 0 && scoreDiff[1] === 0 ? 0 : 500,
-    );
-  }, [nextPlayer]);
+      endGame && gameIsOver();
+      setBoard(boardClone);
+      setValidMoves(newValidMoves);
+      updateScore(scoreDiff);
+    };
+    f();
+  }, [score]);
 
   const handleBoardClick = (x: number, y: number) => {
     // If the game is over, no more moves can be made.
@@ -404,7 +403,7 @@ function Board(props: BoardProps): JSX.Element {
     // Since the move is valid, we save it and flip the appropriate pieces.
     const boardClone = cloneBoardArray(board);
     takeMove(boardClone, Marker.HUMAN, [x, y], validMoves.get(currentKey) || []);
-    const scoreDiff = flipped([0, 0], validMoves.get(currentKey)?.length || 0, true);
+    const scoreDiff = flipped(validMoves.get(currentKey)?.length || 0, true);
 
     // Clear data about what happened previously.
     loopOverBoard(boardClone, (target) => {
@@ -497,6 +496,7 @@ function Game(): JSX.Element {
           boardHeight={BOARD_HEIGHT}
           nextPlayer={nextPlayer}
           isGameOver={isGameOver}
+          score={score}
           gameIsOver={() => setIsGameOver(true)}
           otherPlayersTurn={() => setIsHumanNext(!isHumanNext)}
           updateScore={updateScore}
