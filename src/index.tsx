@@ -231,6 +231,9 @@ function getValidMoves(board: BoardArray, nextPlayer: Marker): ValidMoves {
 
 function flipped(numFlipped: number, isHumanMove: boolean): Score {
   const newScore: Score = [0, 0];
+  if (numFlipped === 0) {
+    return newScore;
+  }
   if (isHumanMove) {
     newScore[0] += 1 + numFlipped;
     newScore[1] -= numFlipped;
