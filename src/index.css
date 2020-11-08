@@ -28,19 +28,19 @@ td {
   grid-template: 1fr / 320px 320px;
 }
 
-.game-updates {
-  height: 320px;
+#game-updates {
+  height: 327px;
   overflow: auto;
   grid-column: 1 / span 1;
   border: 1px solid black;
   margin: 0 1rem;
 }
 
-.game-updates p {
+#game-updates p {
   margin: 1rem;
 }
 
-.game-board {
+#game-board {
   grid-column: 2 / span 1;
 }
 

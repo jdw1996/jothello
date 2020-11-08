@@ -473,6 +473,12 @@ function Game(): JSX.Element {
     }
   }, [isGameOver]);
 
+  useEffect(() => {
+    const gameLogBox = document.getElementById('game-updates');
+    if (gameLogBox === null) return;
+    gameLogBox.scrollTop = (gameLogBox?.scrollHeight || 0) - (gameLogBox?.clientHeight || 0);
+  }, [gameLog]);
+
   function updateScore(numFlipped: number, player: Marker): void {
     if (numFlipped === 0) return;
     setScore((s) => {
@@ -498,17 +504,18 @@ function Game(): JSX.Element {
     setIsGameOver(false);
     setScore([2, 2]);
     setBoardKey((n) => n + 1);
+    setGameLog([]);
   }
 
   return (
     <div className="game">
-      <div className="game-updates">
+      <div id="game-updates">
         {gameLog.map((s, i) => (
           <p key={i}>{s}</p>
         ))}
         <p>{isGameOver && <button onClick={newGame}>Reset</button>}</p>
       </div>
-      <div className="game-board">
+      <div id="game-board">
         <Board
           key={boardKey}
           boardWidth={BOARD_WIDTH}
