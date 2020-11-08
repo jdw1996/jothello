@@ -23,6 +23,27 @@ td {
   height: 40px;
 }
 
+.game {
+  display: grid;
+  grid-template: 1fr / 320px 320px;
+}
+
+.game-updates {
+  height: 320px;
+  overflow: auto;
+  grid-column: 1 / span 1;
+  border: 1px solid black;
+  margin: 0 1rem;
+}
+
+.game-updates p {
+  margin: 1rem;
+}
+
+.game-board {
+  grid-column: 2 / span 1;
+}
+
 .square-container {
   display: grid;
   grid-template: 1fr / 1fr;

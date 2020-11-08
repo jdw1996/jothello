@@ -229,21 +229,6 @@ function getValidMoves(board: BoardArray, nextPlayer: Marker): ValidMoves {
   return validMoves;
 }
 
-function flipped(numFlipped: number, isHumanMove: boolean): Score {
-  const newScore: Score = [0, 0];
-  if (numFlipped === 0) {
-    return newScore;
-  }
-  if (isHumanMove) {
-    newScore[0] += 1 + numFlipped;
-    newScore[1] -= numFlipped;
-  } else {
-    newScore[0] -= numFlipped;
-    newScore[1] += 1 + numFlipped;
-  }
-  return newScore;
-}
-
 function takeMove(board: BoardArray, player: Marker, position: Coordinate, toFlip: Coordinate[]): void {
   board[position[1]][position[0]].marker = player;
   for (const [i, j] of toFlip) {
@@ -346,7 +331,7 @@ type BoardProps = {
   score: Score;
   gameIsOver: () => void;
   otherPlayersTurn: () => void;
-  updateScore: (score: Score) => void;
+  updateScore: (numFlipped: number, player: Marker) => void;
 };
 
 function Board(props: BoardProps): JSX.Element {
@@ -364,10 +349,9 @@ function Board(props: BoardProps): JSX.Element {
 
       // Let the bot take its turn.
       const numFlipped = botGo(boardClone);
-      const scoreDiff = flipped(numFlipped, false);
 
       // If the bot made a move, wait before persisting changes.
-      await sleep(scoreDiff[0] === 0 && scoreDiff[1] === 0 ? 0 : 500);
+      await sleep(numFlipped ? 500 : 0);
 
       // Find the possible moves for the human.
       const newValidMoves = getValidMoves(boardClone, Marker.HUMAN);
@@ -386,7 +370,7 @@ function Board(props: BoardProps): JSX.Element {
       endGame && gameIsOver();
       setBoard(boardClone);
       setValidMoves(newValidMoves);
-      updateScore(scoreDiff);
+      updateScore(numFlipped, Marker.BOT);
     };
     f();
   }, [score]);
@@ -406,7 +390,7 @@ function Board(props: BoardProps): JSX.Element {
     // Since the move is valid, we save it and flip the appropriate pieces.
     const boardClone = cloneBoardArray(board);
     takeMove(boardClone, Marker.HUMAN, [x, y], validMoves.get(currentKey) || []);
-    const scoreDiff = flipped(validMoves.get(currentKey)?.length || 0, true);
+    const numFlipped = validMoves.get(currentKey)?.length || 0;
 
     // Clear data about what happened previously.
     loopOverBoard(boardClone, (target) => {
@@ -421,7 +405,7 @@ function Board(props: BoardProps): JSX.Element {
     otherPlayersTurn();
     setBoard(boardClone);
     setValidMoves(new Map<string, Coordinate[]>());
-    updateScore(scoreDiff);
+    updateScore(numFlipped, Marker.HUMAN);
   };
 
   const handleHover = (x: number, y: number, isEnter: boolean) => {
@@ -478,13 +462,34 @@ function Game(): JSX.Element {
   const [isGameOver, setIsGameOver] = useState(false);
   const [score, setScore] = useState<Score>([2, 2]);
   const [boardKey, setBoardKey] = useState(0);
+  const [gameLog, setGameLog] = useState<string[]>([]);
 
-  function updateScore(diff: Score): void {
+  useEffect(() => {
+    if (isGameOver) {
+      const winner = score[0] > score[1] ? Marker.HUMAN : Marker.BOT;
+      const glClone = [...gameLog];
+      glClone.push(`Game over. Player ${markerToStr(winner)} wins.`);
+      setGameLog(glClone);
+    }
+  }, [isGameOver]);
+
+  function updateScore(numFlipped: number, player: Marker): void {
+    if (numFlipped === 0) return;
     setScore((s) => {
       const sClone: Score = [...s];
-      sClone[0] += diff[0];
-      sClone[1] += diff[1];
+      if (player === Marker.HUMAN) {
+        sClone[0] += 1 + numFlipped;
+        sClone[1] -= numFlipped;
+      } else {
+        sClone[0] -= numFlipped;
+        sClone[1] += 1 + numFlipped;
+      }
       return sClone;
+    });
+    setGameLog((gl) => {
+      const glClone = [...gl];
+      glClone.push(`Player ${markerToStr(player)} flipped ${numFlipped} piece${numFlipped > 1 ? 's' : ''}.`);
+      return glClone;
     });
   }
 
@@ -497,18 +502,12 @@ function Game(): JSX.Element {
 
   return (
     <div className="game">
-      <p className="status">
-        {isGameOver ? (
-          <>
-            Game over. <button onClick={newGame}>Reset</button>
-          </>
-        ) : (
-          `Next player: ${markerToStr(nextPlayer)}\n`
-        )}
-      </p>
-      <p className="score">{`The score is ${score[0]} for ${markerToStr(Marker.HUMAN)} and ${
-        score[1]
-      } for ${markerToStr(Marker.BOT)}.`}</p>
+      <div className="game-updates">
+        {gameLog.map((s, i) => (
+          <p key={i}>{s}</p>
+        ))}
+        <p>{isGameOver && <button onClick={newGame}>Reset</button>}</p>
+      </div>
       <div className="game-board">
         <Board
           key={boardKey}
