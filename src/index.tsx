@@ -462,22 +462,14 @@ function Game(): JSX.Element {
   const [isGameOver, setIsGameOver] = useState(false);
   const [score, setScore] = useState<Score>([2, 2]);
   const [boardKey, setBoardKey] = useState(0);
-  const [gameLog, setGameLog] = useState<string[]>([]);
+  const [gameDialog, setGameDialog] = useState('The game is about to begin.');
 
   useEffect(() => {
     if (isGameOver) {
       const winner = score[0] > score[1] ? Marker.HUMAN : Marker.BOT;
-      const glClone = [...gameLog];
-      glClone.push(`Game over. Player ${markerToStr(winner)} wins.`);
-      setGameLog(glClone);
+      setGameDialog(`Game over. Player ${markerToStr(winner)} wins.`);
     }
   }, [isGameOver]);
-
-  useEffect(() => {
-    const gameLogBox = document.getElementById('game-updates');
-    if (gameLogBox === null) return;
-    gameLogBox.scrollTop = (gameLogBox?.scrollHeight || 0) - (gameLogBox?.clientHeight || 0);
-  }, [gameLog]);
 
   function updateScore(numFlipped: number, player: Marker): void {
     if (numFlipped === 0) return;
@@ -492,11 +484,7 @@ function Game(): JSX.Element {
       }
       return sClone;
     });
-    setGameLog((gl) => {
-      const glClone = [...gl];
-      glClone.push(`Player ${markerToStr(player)} flipped ${numFlipped} piece${numFlipped > 1 ? 's' : ''}.`);
-      return glClone;
-    });
+    setGameDialog(`Player ${markerToStr(player)} flipped ${numFlipped} piece${numFlipped > 1 ? 's' : ''}.`);
   }
 
   function newGame(): void {
@@ -504,17 +492,17 @@ function Game(): JSX.Element {
     setIsGameOver(false);
     setScore([2, 2]);
     setBoardKey((n) => n + 1);
-    setGameLog([]);
+    setGameDialog('The game is about to begin.');
   }
 
   return (
     <div className="game">
-      <div id="game-updates">
-        {gameLog.map((s, i) => (
-          <p key={i}>{s}</p>
-        ))}
-        <p>{isGameOver && <button onClick={newGame}>Reset</button>}</p>
-      </div>
+      <p>{gameDialog}</p>
+      <p>
+        {`${markerToStr(Marker.HUMAN)}: ${score[0].toString().padStart(2, '0')}`}&emsp;
+        {`${markerToStr(Marker.BOT)}: ${score[1].toString().padStart(2, '0')}`}&emsp;
+        {isGameOver && <button onClick={newGame}>Reset</button>}
+      </p>
       <div id="game-board">
         <Board
           key={boardKey}
