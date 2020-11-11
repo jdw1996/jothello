@@ -109,3 +109,13 @@ td {
   animation: goToFront 0.3s;
   animation-fill-mode: forwards;
 }
+
+.human-score,
+.bot-score {
+  padding: 0.5rem;
+  border: 1px solid white;
+}
+
+.next-player {
+  border: 1px solid black;
+}
