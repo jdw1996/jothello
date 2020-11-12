@@ -497,7 +497,6 @@ function Game(): JSX.Element {
 
   return (
     <div className="game">
-      <p>{gameDialog}</p>
       <p>
         <span className={'human-score' + (isHumanNext && !isGameOver ? ' next-player' : '')}>{`${markerToStr(
           Marker.HUMAN,
@@ -522,6 +521,7 @@ function Game(): JSX.Element {
           updateScore={updateScore}
         />
       </div>
+      <p>{gameDialog}</p>
     </div>
   );
 }
