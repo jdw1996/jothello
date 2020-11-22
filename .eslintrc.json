@@ -21,6 +21,6 @@
   },
   "rules": {
     "react/prop-types": ["off"],
-    "sonarjs/cognitive-complexity": ["error", 15]
+    "sonarjs/cognitive-complexity": ["error", 35]
   }
 }
