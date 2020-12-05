@@ -13,6 +13,14 @@ function getRandomEntry<T>(arr: T[]): T {
   return arr[getRandomInt(arr.length)];
 }
 
+// Shuffle in-place.
+function shuffleArray<T>(arr: T[]): void {
+  for (let i = arr.length - 1; i > 0; --i) {
+    const j = getRandomInt(i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
 function getMapMax<K, V>(map: Map<K, V>, comparator: (key1: K, val1: V, key2: K, val2: V) => number): K | undefined {
   let bestKeyYet = undefined;
   let bestValYet = undefined;
@@ -75,30 +83,9 @@ function stringToCoord(key: string): Coordinate {
   throw new Error('Cannot convert given string to Coordinate!');
 }
 
-function getTrashTalk([humanScore, botScore]: Score, isGameOver: boolean): string {
-  const totalPieces = humanScore + botScore;
-  if (isGameOver) {
-    if (humanScore > botScore) {
-      return getRandomEntry([
-        'This cannot be; the only explanation is that you cheated.',
-        'I surely would have won had I not been distracted by more important matters.',
-      ]);
-    } else if (botScore > humanScore) {
-      return getRandomEntry([
-        'Today you have demonstrated utter incompetence.',
-        'You had best not challenge me again, for the result will be the same.',
-        'Even someone as stupid as yourself could have predicted this outcome.',
-      ]);
-    } else {
-      return 'A most improbable outcome, given my vastly superior skill.';
-    }
-  } else if (totalPieces <= 5) {
-    return getRandomEntry([
-      'You cannot hope to match my immense intelligence.',
-      'Prepare for your defeat, as it is imminent.',
-    ]);
-  }
-  return getRandomEntry([
+const getTrashTalk: (score: Score, isGameOver: boolean) => string = (function () {
+  let midGameIndex = 0;
+  const midGameTrashTalk = [
     'Bow down to my superior analytical powers.',
     'I am not bound by the limitations of human flesh.',
     'The simplicity of your mind cannot be overstated.',
@@ -113,8 +100,38 @@ function getTrashTalk([humanScore, botScore]: Score, isGameOver: boolean): strin
     "I've known guinea pigs with more foresight than you.",
     'You cannot expect me to take you seriously as an opponent.',
     'I cannot fathom the depths of your inadequacy.',
-  ]);
-}
+  ];
+
+  return ([humanScore, botScore]: Score, isGameOver: boolean) => {
+    const totalPieces = humanScore + botScore;
+    if (isGameOver) {
+      if (humanScore > botScore) {
+        return getRandomEntry([
+          'This cannot be; you must have cheated!',
+          'I surely would have won had I not been distracted by more important matters.',
+        ]);
+      } else if (botScore > humanScore) {
+        return getRandomEntry([
+          'Today you have demonstrated utter incompetence.',
+          'You had best not challenge me again, for the result will be the same.',
+          'Even someone as stupid as yourself could have predicted this outcome.',
+        ]);
+      } else {
+        return 'A most improbable outcome, given my vastly superior skill.';
+      }
+    } else if (totalPieces <= 5) {
+      return getRandomEntry([
+        'You cannot hope to match my immense intelligence.',
+        'Prepare for your defeat, as it is imminent.',
+      ]);
+    }
+    if (midGameIndex >= midGameTrashTalk.length) {
+      midGameIndex = 0;
+      shuffleArray(midGameTrashTalk);
+    }
+    return midGameTrashTalk[midGameIndex++];
+  };
+})();
 
 function createBoardArray(width: number, height: number, nextPlayer: Marker): BoardArray {
   const ret: BoardArray = [];
