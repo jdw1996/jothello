@@ -20,6 +20,11 @@ td {
   height: 40px;
 }
 
+.game {
+  margin: 0 auto;
+  width: 350px;
+}
+
 #game-board {
   grid-column: 2 / span 1;
 }
