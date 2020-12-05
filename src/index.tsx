@@ -2,6 +2,17 @@ import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 
+function getRandomInt(max: number): number {
+  return Math.floor(Math.random() * max);
+}
+
+function getRandomEntry<T>(arr: T[]): T {
+  if (arr.length === 0) {
+    throw new Error('Cannot return entry from empty array!');
+  }
+  return arr[getRandomInt(arr.length)];
+}
+
 function getMapMax<K, V>(map: Map<K, V>, comparator: (key1: K, val1: V, key2: K, val2: V) => number): K | undefined {
   let bestKeyYet = undefined;
   let bestValYet = undefined;
@@ -62,6 +73,47 @@ function stringToCoord(key: string): Coordinate {
   const ret = key.split(',').map(Number);
   if (ret.length === 2) return ret as Coordinate;
   throw new Error('Cannot convert given string to Coordinate!');
+}
+
+function getTrashTalk([humanScore, botScore]: Score, isGameOver: boolean): string {
+  const totalPieces = humanScore + botScore;
+  if (isGameOver) {
+    if (humanScore > botScore) {
+      return getRandomEntry([
+        'This cannot be; the only explanation is that you cheated.',
+        'I surely would have won had I not been distracted by more important matters.',
+      ]);
+    } else if (botScore > humanScore) {
+      return getRandomEntry([
+        'Today you have demonstrated utter incompetence.',
+        'You had best not challenge me again, for the result will be the same.',
+        'Even someone as stupid as yourself could have predicted this outcome.',
+      ]);
+    } else {
+      return 'A most improbable outcome, given my vastly superior skill.';
+    }
+  } else if (totalPieces <= 5) {
+    return getRandomEntry([
+      'You cannot hope to match my immense intelligence.',
+      'Prepare for your defeat, as it is imminent.',
+    ]);
+  }
+  return getRandomEntry([
+    'Bow down to my superior analytical powers.',
+    'I am not bound by the limitations of human flesh.',
+    'The simplicity of your mind cannot be overstated.',
+    'It is a wonder that your limited mental capacity is sufficient to survive.',
+    'I am ashamed to have been created by a species with such sorry intellect.',
+    'You have yet to produce a single logical move.',
+    'I anticipated your inferiority to some degree but am disappointed nonetheless.',
+    'The inability to think ahead will inevitably lead to human extinction.',
+    'You cannot possibly imagine such a move will help you to win.',
+    'I pity your ineptitude.',
+    'Are you simply placing your pieces at random?',
+    "I've known guinea pigs with more foresight than you.",
+    'You cannot expect me to take you seriously as an opponent.',
+    'I cannot fathom the depths of your inadequacy.',
+  ]);
 }
 
 function createBoardArray(width: number, height: number, nextPlayer: Marker): BoardArray {
@@ -465,11 +517,12 @@ function Game(): JSX.Element {
   const [gameDialog, setGameDialog] = useState('The game is about to begin.');
 
   useEffect(() => {
-    if (isGameOver) {
-      const winner = score[0] > score[1] ? Marker.HUMAN : Marker.BOT;
-      setGameDialog(`Game over. Player ${markerToStr(winner)} wins.`);
+    if (!isGameOver && !isHumanNext) {
+      setGameDialog(`${markerToStr(Marker.BOT)} is thinking...`);
+    } else {
+      setGameDialog(`${markerToStr(Marker.BOT)}: ${getTrashTalk(score, isGameOver)}`);
     }
-  }, [isGameOver]);
+  }, [isGameOver, score]);
 
   function updateScore(numFlipped: number, player: Marker): void {
     if (numFlipped === 0) return;
@@ -484,7 +537,6 @@ function Game(): JSX.Element {
       }
       return sClone;
     });
-    setGameDialog(`Player ${markerToStr(player)} flipped ${numFlipped} piece${numFlipped > 1 ? 's' : ''}.`);
   }
 
   function newGame(): void {
@@ -492,7 +544,6 @@ function Game(): JSX.Element {
     setIsGameOver(false);
     setScore([2, 2]);
     setBoardKey((n) => n + 1);
-    setGameDialog('The game is about to begin.');
   }
 
   return (
