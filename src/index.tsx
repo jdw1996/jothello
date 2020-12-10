@@ -539,7 +539,7 @@ function Game(): JSX.Element {
     } else {
       setGameDialog(`${markerToStr(Marker.BOT)}: ${getTrashTalk(score, isGameOver)}`);
     }
-  }, [isGameOver, score]);
+  }, [isGameOver, isHumanNext]);
 
   function updateScore(numFlipped: number, player: Marker): void {
     if (numFlipped === 0) return;
