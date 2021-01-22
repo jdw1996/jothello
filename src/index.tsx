@@ -119,7 +119,7 @@ const getTrashTalk: (score: Score, isGameOver: boolean) => string = (function ()
       } else {
         return 'A most improbable outcome, given my vastly superior skill.';
       }
-    } else if (totalPieces <= 5) {
+    } else if (totalPieces < 5) {
       return getRandomEntry([
         'You cannot hope to match my immense intelligence.',
         'Prepare for your defeat, as it is imminent.',
