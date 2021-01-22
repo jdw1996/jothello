@@ -1,8 +1,8 @@
 {
   "files": {
     "main.css": "/jothello/static/css/main.1f908fe0.chunk.css",
-    "main.js": "/jothello/static/js/main.7689a9b5.chunk.js",
-    "main.js.map": "/jothello/static/js/main.7689a9b5.chunk.js.map",
+    "main.js": "/jothello/static/js/main.e89dc7ef.chunk.js",
+    "main.js.map": "/jothello/static/js/main.e89dc7ef.chunk.js.map",
     "runtime-main.js": "/jothello/static/js/runtime-main.a7593617.js",
     "runtime-main.js.map": "/jothello/static/js/runtime-main.a7593617.js.map",
     "static/js/2.c626042d.chunk.js": "/jothello/static/js/2.c626042d.chunk.js",
@@ -15,6 +15,6 @@
     "static/js/runtime-main.a7593617.js",
     "static/js/2.c626042d.chunk.js",
     "static/css/main.1f908fe0.chunk.css",
-    "static/js/main.7689a9b5.chunk.js"
+    "static/js/main.e89dc7ef.chunk.js"
   ]
 }
