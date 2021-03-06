@@ -572,11 +572,11 @@ function Game(): JSX.Element {
       <p>
         <span className={'human-score' + (isHumanNext && !isGameOver ? ' next-player' : '')}>{`${markerToStr(
           Marker.HUMAN,
-        )} : ${score[0].toString().padStart(2, '0')}`}</span>
+        )} : ${score[0].toString()}`}</span>
         &emsp;
         <span className={'bot-score' + (isHumanNext || isGameOver ? '' : ' next-player')}>{`${markerToStr(
           Marker.BOT,
-        )} : ${score[1].toString().padStart(2, '0')}`}</span>
+        )} : ${score[1].toString()}`}</span>
         &emsp;
         {isGameOver && <button onClick={newGame}>Reset</button>}
       </p>
