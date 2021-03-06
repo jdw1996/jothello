@@ -568,7 +568,7 @@ function Game(): JSX.Element {
   }
 
   return (
-    <div className="game">
+    <>
       <p>
         <span className={'human-score' + (isHumanNext && !isGameOver ? ' next-player' : '')}>{`${markerToStr(
           Marker.HUMAN,
@@ -580,21 +580,23 @@ function Game(): JSX.Element {
         &emsp;
         {isGameOver && <button onClick={newGame}>Reset</button>}
       </p>
-      <div id="game-board">
-        <Board
-          key={boardKey}
-          boardWidth={BOARD_WIDTH}
-          boardHeight={BOARD_HEIGHT}
-          nextPlayer={nextPlayer}
-          isGameOver={isGameOver}
-          score={score}
-          gameIsOver={() => setIsGameOver(true)}
-          otherPlayersTurn={() => setIsHumanNext(!isHumanNext)}
-          updateScore={updateScore}
-        />
+      <div className="game">
+        <div id="game-board">
+          <Board
+            key={boardKey}
+            boardWidth={BOARD_WIDTH}
+            boardHeight={BOARD_HEIGHT}
+            nextPlayer={nextPlayer}
+            isGameOver={isGameOver}
+            score={score}
+            gameIsOver={() => setIsGameOver(true)}
+            otherPlayersTurn={() => setIsHumanNext(!isHumanNext)}
+            updateScore={updateScore}
+          />
+        </div>
       </div>
       <p>{gameDialog}</p>
-    </div>
+    </>
   );
 }
 
