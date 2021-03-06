@@ -524,8 +524,12 @@ function Board(props: BoardProps): JSX.Element {
 }
 
 function Game(): JSX.Element {
-  const BOARD_HEIGHT = 8;
-  const BOARD_WIDTH = 8;
+  const params = new URLSearchParams(window.location.search);
+  const paramHeight = Number.parseInt(params.get('h') ?? '');
+  const paramWidth = Number.parseInt(params.get('w') ?? '');
+  const BOARD_HEIGHT = Number.isNaN(paramHeight) ? 8 : paramHeight;
+  const BOARD_WIDTH = Number.isNaN(paramWidth) ? 8 : paramWidth;
+
   const [isHumanNext, setIsHumanNext] = useState(true);
   const nextPlayer = getMarker(isHumanNext);
   const [isGameOver, setIsGameOver] = useState(false);

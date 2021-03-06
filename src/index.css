@@ -1,5 +1,6 @@
 body {
   font-family: serif;
+  text-align: center;
 }
 
 table {
@@ -22,7 +23,7 @@ td {
 
 .game {
   margin: 0 auto;
-  width: 350px;
+  display: inline-block;
 }
 
 #game-board {
